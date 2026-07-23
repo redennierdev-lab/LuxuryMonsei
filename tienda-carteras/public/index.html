@@ -17,7 +17,7 @@
     <header class="header" id="main-header">
         <div class="header-container">
             <div class="brand-box">
-                <a href="#" class="logo">Maison Élégance</a>
+                <a href="#" id="brand-logo-text" class="logo">Maison Élégance</a>
                 <span id="txt-header-sublogo" class="sub-logo">Paris • New York • Tokyo</span>
             </div>
             
@@ -76,7 +76,7 @@
         <div class="footer-gold-bar"></div>
         <div class="footer-content">
             <div class="footer-brand-section">
-                <p class="footer-logo">Maison Élégance</p>
+                <p id="txt-footer-logo" class="footer-logo">Maison Élégance</p>
                 <span id="txt-footer-tagline" class="footer-tagline">Paris • New York • Tokyo</span>
                 <p id="txt-footer-sub" class="footer-sub">Atelier de Maroquinerie • Atemporalidad &amp; Perfección</p>
             </div>
@@ -242,7 +242,10 @@
         <div class="modal-mobile modal-admin-custom">
             <div class="modal-header">
                 <h3>Atelier Concierge</h3>
-                <button id="btn-cerrar-admin" aria-label="Cerrar">&times;</button>
+                <div class="modal-admin-actions">
+                    <button id="btn-logout-admin" class="btn-logout-admin" title="Cerrar Sesión Administrador">🚪 Cerrar Sesión</button>
+                    <button id="btn-cerrar-admin" aria-label="Cerrar">&times;</button>
+                </div>
             </div>
 
             <!-- Pestañas de navegación Admin -->
@@ -254,7 +257,7 @@
                     👜 Inventario
                 </button>
                 <button id="tab-textos-btn" class="admin-tab">
-                    ✏️ Editar Textos
+                    ✏️ Editar Textos &amp; Marca
                 </button>
             </div>
 
@@ -320,11 +323,15 @@
             <!-- Pestaña 3: Editor de Textos y Nombres del Sitio -->
             <div id="tab-textos-content" class="tab-content">
                 <div class="buzon-header">
-                    <h4>Edición Personalizada de Textos</h4>
-                    <p class="buzon-sub">Edita los títulos, subtítulos, descripciones y nombres de filtros de tu sitio web sin alterar el diseño.</p>
+                    <h4>Edición Personalizada de Marca y Textos</h4>
+                    <p class="buzon-sub">Modifica el nombre de tu marca, títulos, subtítulos, descripciones y nombres de filtros de tu sitio web.</p>
                 </div>
                 <form id="form-textos" class="form-luxury">
-                    <div class="editor-section-title">Entezado & Header</div>
+                    <div class="editor-section-title">Marca &amp; Identidad Principal</div>
+                    <div class="form-group">
+                        <label for="inp-brandName">Nombre de la Marca (Logo Encabezado y Footer)</label>
+                        <input type="text" id="inp-brandName" name="brandName" placeholder="ej. Maison Élégance">
+                    </div>
                     <div class="form-group">
                         <label for="inp-headerSublogo">Sub-logo Encabezado</label>
                         <input type="text" id="inp-headerSublogo" name="headerSublogo">

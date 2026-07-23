@@ -67,6 +67,15 @@ async function cargarTextosSitio() {
 function aplicarTextosEnDOM() {
     if (!textosConfig) return;
 
+    // Nombre de Marca
+    if (textosConfig.brandName) {
+        const brandLogoText = document.getElementById('brand-logo-text');
+        const txtFooterLogo = document.getElementById('txt-footer-logo');
+        if (brandLogoText) brandLogoText.innerText = textosConfig.brandName;
+        if (txtFooterLogo) txtFooterLogo.innerText = textosConfig.brandName;
+        document.title = `${textosConfig.brandName} | Boutique de Haute Maroquinerie`;
+    }
+
     if (textosConfig.headerSublogo) document.getElementById('txt-header-sublogo').innerText = textosConfig.headerSublogo;
     if (textosConfig.heroTag) document.getElementById('txt-hero-tag').innerText = textosConfig.heroTag;
     if (textosConfig.heroTitulo) document.getElementById('txt-hero-titulo').innerText = textosConfig.heroTitulo;
@@ -465,9 +474,10 @@ formCheckout.addEventListener('submit', async (e) => {
     }
 });
 
-// --- 6. Botón de Administración Individual & Pestañas ---
+// --- 6. Botón de Administración Individual, Cerrar Sesión & Pestañas ---
 const btnAbrirAdmin = document.getElementById('btn-abrir-admin');
 const btnAdminHeader = document.getElementById('btn-admin-header');
+const btnLogoutAdmin = document.getElementById('btn-logout-admin');
 const modalAdmin = document.getElementById('modal-admin');
 const formAdmin = document.getElementById('form-producto');
 const formTextos = document.getElementById('form-textos');
@@ -532,6 +542,18 @@ btnAbrirAdmin.addEventListener('click', async () => {
     abrirPanelAdministrador();
 });
 
+// Cerrar Sesión Admin
+if (btnLogoutAdmin) {
+    btnLogoutAdmin.addEventListener('click', () => {
+        adminPIN = '';
+        sessionStorage.removeItem('maison_admin_pin');
+        sessionStorage.removeItem('maison_admin_unlocked');
+        btnAbrirAdmin.style.display = 'none';
+        modalAdmin.classList.remove('activo');
+        mostrarToast('Sesión de Administrador cerrada correctamente');
+    });
+}
+
 async function abrirPanelAdministrador() {
     if (!adminPIN) {
         const autenticado = await solicitarAutenticacionAdmin();
@@ -575,11 +597,11 @@ modalAdmin.addEventListener('click', (e) => {
     if (e.target === modalAdmin) modalAdmin.classList.remove('activo');
 });
 
-// --- 7. Editor de Textos y Nombres de Filtros ---
+// --- 7. Editor de Marca, Textos y Nombres de Filtros ---
 function poblarFormularioTextos() {
     if (!textosConfig) return;
     const fields = [
-        'headerSublogo', 'heroTag', 'heroTitulo', 'heroDesc', 'heroScrollText',
+        'brandName', 'headerSublogo', 'heroTag', 'heroTitulo', 'heroDesc', 'heroScrollText',
         'filterTodas', 'filter1', 'filter2', 'filter3',
         'sectionTag', 'sectionTitulo', 'footerTagline', 'footerSub',
         'footerCol1Desc', 'footerCol3Desc', 'copyright', 'badgeText'
@@ -599,7 +621,7 @@ formTextos.addEventListener('submit', async (e) => {
     }
 
     const fields = [
-        'headerSublogo', 'heroTag', 'heroTitulo', 'heroDesc', 'heroScrollText',
+        'brandName', 'headerSublogo', 'heroTag', 'heroTitulo', 'heroDesc', 'heroScrollText',
         'filterTodas', 'filter1', 'filter2', 'filter3',
         'sectionTag', 'sectionTitulo', 'footerTagline', 'footerSub',
         'footerCol1Desc', 'footerCol3Desc', 'copyright', 'badgeText'
@@ -625,7 +647,7 @@ formTextos.addEventListener('submit', async (e) => {
             const data = await res.json();
             textosConfig = data.textos;
             aplicarTextosEnDOM();
-            mostrarToast('¡Textos del sitio actualizados con éxito!');
+            mostrarToast('¡Nombre de marca y textos actualizados con éxito!');
         } else {
             alert('No se pudieron actualizar los textos. Verifica tu PIN.');
         }
@@ -673,7 +695,7 @@ function renderizarBuzonPedidos() {
         div.className = 'pedido-card';
 
         const cleanPhone = (ped.cliente.telefono || '').replace(/[^0-9]/g, '');
-        const waMessage = encodeURIComponent(`Hola ${ped.cliente.nombre}, te contactamos de Maison Élégance sobre tu solicitud de reserva #${ped.id}`);
+        const waMessage = encodeURIComponent(`Hola ${ped.cliente.nombre}, te contactamos sobre tu solicitud de reserva #${ped.id}`);
         const waUrl = cleanPhone ? `https://wa.me/${cleanPhone}?text=${waMessage}` : '#';
 
         let itemsHTML = '';
@@ -700,7 +722,7 @@ function renderizarBuzonPedidos() {
                 <span>📍 ${ped.cliente.direccion}</span>
                 <div class="pedido-contact-actions">
                     ${cleanPhone ? `<a href="${waUrl}" target="_blank" class="btn-whatsapp">💬 WhatsApp</a>` : ''}
-                    <a href="mailto:${ped.cliente.email}?subject=Solicitud Maison Elegance %23${ped.id}" class="btn-email-link">✉️ Enviar Correo</a>
+                    <a href="mailto:${ped.cliente.email}?subject=Solicitud de Adquisicion %23${ped.id}" class="btn-email-link">✉️ Enviar Correo</a>
                 </div>
             </div>
             <div class="pedido-items-box">
