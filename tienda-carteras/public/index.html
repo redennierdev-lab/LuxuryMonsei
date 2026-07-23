@@ -54,12 +54,9 @@
         </div>
     </section>
 
-    <!-- Filtros de Categoría Personalizables -->
-    <nav class="categorias-nav">
-        <button id="btn-filter-todas" class="filter-btn active" data-filter="todas">Todas las Piezas</button>
-        <button id="btn-filter-1" class="filter-btn" data-filter="Edición Limitada">Edición Limitada</button>
-        <button id="btn-filter-2" class="filter-btn" data-filter="Colección Noche">Colección Noche</button>
-        <button id="btn-filter-3" class="filter-btn" data-filter="Esenciales de Día">Esenciales de Día</button>
+    <!-- Filtros de Categoría Dinámicos por Etiqueta -->
+    <nav class="categorias-nav" id="categorias-nav">
+        <!-- Los botones de filtro se generan dinámicamente según las categorías existentes -->
     </nav>
 
     <!-- Catalogo Section -->
@@ -178,7 +175,7 @@
                     <div class="luxury-divider"></div>
 
                     <div class="precio-action-block">
-                        <span id="detalle-precio" class="precio">44</span>
+                        <span id="detalle-precio" class="precio">$0 USD</span>
                         <button id="btn-add-cart-detalle" class="btn-comprar">Añadir a la Bolsa</button>
                     </div>
                 </div>
@@ -270,8 +267,12 @@
                 <div id="buzon-pedidos-lista" class="buzon-lista"></div>
             </div>
 
-            <!-- Pestaña 2: Formulario de carga e Inventario -->
+            <!-- Pestaña 2: Formulario de Carga / Edición e Inventario -->
             <div id="tab-inventario-content" class="tab-content">
+                <div class="form-header-admin">
+                    <h4 id="form-producto-titulo">Publicar Nueva Pieza</h4>
+                    <button type="button" id="btn-cancelar-edicion" class="btn-cancelar-edicion" style="display:none;">✕ Cancelar Edición</button>
+                </div>
                 <form id="form-producto" class="form-luxury" enctype="multipart/form-data">
                     <div class="form-group">
                         <label for="nombre">Nombre de la Pieza</label>
@@ -280,8 +281,9 @@
 
                     <div class="grid-2">
                         <div class="form-group">
-                            <label for="categoria">Categoría</label>
-                            <input type="text" id="categoria" name="categoria" placeholder="ej. Edición Limitada" required>
+                            <label for="categoria">Categoría / Etiqueta de Filtro</label>
+                            <input type="text" id="categoria" name="categoria" placeholder="ej. Verano, Edición Limitada, Noche..." required>
+                            <small>Al escribir una categoría nueva (ej. "Verano"), se creará automáticamente su botón de filtro para tus clientes.</small>
                         </div>
                         <div class="form-group">
                             <label for="precio">Precio</label>
@@ -306,12 +308,12 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="imagenes">Fotografías de la Pieza (Galería de Fotos / Archivos)</label>
-                        <input type="file" id="imagenes" name="imagenes" accept="image/*" multiple required class="input-file-luxury">
-                        <small>Abre la galería de fotos y almacenamiento de tu dispositivo para seleccionar una o varias imágenes.</small>
+                        <label for="imagenes" id="label-imagenes">Fotografías de la Pieza (Galería de Fotos / Archivos)</label>
+                        <input type="file" id="imagenes" name="imagenes" accept="image/*" multiple class="input-file-luxury">
+                        <small id="help-imagenes">Abre la galería de fotos y almacenamiento de tu dispositivo para seleccionar una o varias imágenes. (Si estás editando, solo selecciona fotos si deseas cambiarlas).</small>
                     </div>
 
-                    <button type="submit" class="btn-guardar">Publicar Pieza</button>
+                    <button type="submit" id="btn-submit-producto" class="btn-guardar">Publicar Pieza</button>
                 </form>
 
                 <div class="admin-list-section">
@@ -324,7 +326,7 @@
             <div id="tab-textos-content" class="tab-content">
                 <div class="buzon-header">
                     <h4>Edición Personalizada de Marca y Textos</h4>
-                    <p class="buzon-sub">Modifica el nombre de tu marca, títulos, subtítulos, descripciones y nombres de filtros de tu sitio web.</p>
+                    <p class="buzon-sub">Modifica el nombre de tu marca, títulos, subtítulos y descripciones de tu sitio web.</p>
                 </div>
                 <form id="form-textos" class="form-luxury">
                     <div class="editor-section-title">Marca &amp; Identidad Principal</div>
@@ -353,24 +355,6 @@
                     <div class="form-group">
                         <label for="inp-heroScrollText">Texto de Indicador Scroll</label>
                         <input type="text" id="inp-heroScrollText" name="heroScrollText">
-                    </div>
-
-                    <div class="editor-section-title">Nombres de Filtros de Selección</div>
-                    <div class="form-group">
-                        <label for="inp-filterTodas">Nombre Filtro 1 (Todas)</label>
-                        <input type="text" id="inp-filterTodas" name="filterTodas">
-                    </div>
-                    <div class="form-group">
-                        <label for="inp-filter1">Nombre Filtro 2</label>
-                        <input type="text" id="inp-filter1" name="filter1">
-                    </div>
-                    <div class="form-group">
-                        <label for="inp-filter2">Nombre Filtro 3</label>
-                        <input type="text" id="inp-filter2" name="filter2">
-                    </div>
-                    <div class="form-group">
-                        <label for="inp-filter3">Nombre Filtro 4</label>
-                        <input type="text" id="inp-filter3" name="filter3">
                     </div>
 
                     <div class="editor-section-title">Encabezado de Catálogo</div>

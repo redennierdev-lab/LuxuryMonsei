@@ -28,6 +28,7 @@ function formatFotoUrl(url) {
 
 const catalogo = document.getElementById('catalogo-container');
 const catalogoTitulo = document.getElementById('catalogo-titulo');
+const categoriasNav = document.getElementById('categorias-nav');
 
 // Estado Global de la App
 let todosProductos = [];
@@ -37,6 +38,7 @@ let filtroActual = 'todas';
 let busquedaActual = '';
 let bolsaCompras = JSON.parse(localStorage.getItem('maison_cart') || '[]');
 let adminPIN = sessionStorage.getItem('maison_admin_pin') || '';
+let editandoId = null; // ID del producto que se está editando
 
 // --- 1. Cargar Boutique & Textos Personalizados ---
 async function cargarTienda() {
@@ -44,6 +46,7 @@ async function cargarTienda() {
         await cargarTextosSitio();
         const res = await fetch(API_URL);
         todosProductos = await res.json();
+        renderizarBarraCategorias();
         renderizarCatalogo();
         actualizarBolsaUI();
         verificarModoAdminURL();
@@ -67,7 +70,6 @@ async function cargarTextosSitio() {
 function aplicarTextosEnDOM() {
     if (!textosConfig) return;
 
-    // Nombre de Marca
     if (textosConfig.brandName) {
         const brandLogoText = document.getElementById('brand-logo-text');
         const txtFooterLogo = document.getElementById('txt-footer-logo');
@@ -82,27 +84,6 @@ function aplicarTextosEnDOM() {
     if (textosConfig.heroDesc) document.getElementById('txt-hero-desc').innerText = textosConfig.heroDesc;
     if (textosConfig.heroScrollText) document.getElementById('txt-hero-scroll').innerText = textosConfig.heroScrollText;
 
-    // Filtros
-    if (textosConfig.filterTodas) {
-        const btnF = document.getElementById('btn-filter-todas');
-        btnF.innerText = textosConfig.filterTodas;
-    }
-    if (textosConfig.filter1) {
-        const btnF1 = document.getElementById('btn-filter-1');
-        btnF1.innerText = textosConfig.filter1;
-        btnF1.dataset.filter = textosConfig.filter1;
-    }
-    if (textosConfig.filter2) {
-        const btnF2 = document.getElementById('btn-filter-2');
-        btnF2.innerText = textosConfig.filter2;
-        btnF2.dataset.filter = textosConfig.filter2;
-    }
-    if (textosConfig.filter3) {
-        const btnF3 = document.getElementById('btn-filter-3');
-        btnF3.innerText = textosConfig.filter3;
-        btnF3.dataset.filter = textosConfig.filter3;
-    }
-
     if (textosConfig.sectionTag) document.getElementById('txt-section-tag').innerText = textosConfig.sectionTag;
     if (textosConfig.sectionTitulo && filtroActual === 'todas') catalogoTitulo.innerText = textosConfig.sectionTitulo;
 
@@ -113,6 +94,41 @@ function aplicarTextosEnDOM() {
     if (textosConfig.footerCol3Desc) document.getElementById('txt-footer-col3-desc').innerText = textosConfig.footerCol3Desc;
     if (textosConfig.copyright) document.getElementById('txt-footer-copyright').innerText = textosConfig.copyright;
     if (textosConfig.badgeText) document.getElementById('txt-footer-badge').innerText = textosConfig.badgeText;
+}
+
+// Generación Dinámica de Barra de Categorías / Filtros
+function renderizarBarraCategorias() {
+    if (!categoriasNav) return;
+    
+    // Obtener categorías únicas existentes en los productos
+    const categoriasSet = new Set();
+    todosProductos.forEach(p => {
+        if (p.categoria && p.categoria.trim()) {
+            categoriasSet.add(p.categoria.trim());
+        }
+    });
+
+    const listaCategorias = Array.from(categoriasSet);
+
+    let html = `<button class="filter-btn ${filtroActual === 'todas' ? 'active' : ''}" data-filter="todas">${textosConfig.filterTodas || 'Todas las Piezas'}</button>`;
+    
+    listaCategorias.forEach(cat => {
+        const isActive = (filtroActual.toLowerCase() === cat.toLowerCase());
+        html += `<button class="filter-btn ${isActive ? 'active' : ''}" data-filter="${cat}">${cat}</button>`;
+    });
+
+    categoriasNav.innerHTML = html;
+
+    // Event listeners para los filtros dinámicos
+    categoriasNav.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            categoriasNav.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            filtroActual = btn.dataset.filter;
+            catalogoTitulo.innerText = filtroActual === 'todas' ? (textosConfig.sectionTitulo || 'Catálogo General') : filtroActual;
+            renderizarCatalogo();
+        });
+    });
 }
 
 function renderizarCatalogo() {
@@ -180,6 +196,7 @@ function renderizarCatalogo() {
 
         carruselHTML += `</div>`;
 
+        // NOTA: El precio ha sido omitido deliberadamente de la tarjeta principal para que el cliente lo descubra en el modal flotante
         div.innerHTML = carruselHTML + `
             <div class="producto-info">
                 <span class="categoria">${p.categoria}</span>
@@ -189,9 +206,8 @@ function renderizarCatalogo() {
                     <li><span>Material</span> <span>${p.material}</span></li>
                     <li><span>Medidas</span> <span>${p.dimensiones}</span></li>
                 </ul>
-                <span class="precio">${p.precio}</span>
                 <div class="card-actions">
-                    <button class="btn-comprar" onclick="agregarABolsa(${p.id})">Adquirir Pieza</button>
+                    <button class="btn-comprar" onclick="abrirDetalle(${p.id})">Explorar Pieza</button>
                     <button class="btn-detalle-icon" onclick="abrirDetalle(${p.id})" title="Ver Detalles">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
                     </button>
@@ -234,17 +250,7 @@ function animarScroll() {
     document.querySelectorAll('.producto').forEach(p => observer.observe(p));
 }
 
-// --- 2. Filtros & Búsqueda ---
-document.querySelectorAll('.filter-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        filtroActual = btn.dataset.filter;
-        catalogoTitulo.innerText = filtroActual === 'todas' ? (textosConfig.sectionTitulo || 'Catálogo General') : filtroActual;
-        renderizarCatalogo();
-    });
-});
-
+// --- 2. Búsqueda ---
 const searchBar = document.getElementById('search-bar');
 const inputBusqueda = document.getElementById('input-busqueda');
 
@@ -480,6 +486,10 @@ const btnAdminHeader = document.getElementById('btn-admin-header');
 const btnLogoutAdmin = document.getElementById('btn-logout-admin');
 const modalAdmin = document.getElementById('modal-admin');
 const formAdmin = document.getElementById('form-producto');
+const formProductoTitulo = document.getElementById('form-producto-titulo');
+const btnSubmitProducto = document.getElementById('btn-submit-producto');
+const btnCancelarEdicion = document.getElementById('btn-cancelar-edicion');
+const inputImagenes = document.getElementById('imagenes');
 const formTextos = document.getElementById('form-textos');
 const listaAdmin = document.getElementById('lista-admin');
 const buzonPedidosLista = document.getElementById('buzon-pedidos-lista');
@@ -531,7 +541,6 @@ function verificarModoAdminURL() {
     }
 }
 
-// Abrir Admin desde el Botón Individual del Encabezado
 if (btnAdminHeader) {
     btnAdminHeader.addEventListener('click', async () => {
         abrirPanelAdministrador();
@@ -542,7 +551,6 @@ btnAbrirAdmin.addEventListener('click', async () => {
     abrirPanelAdministrador();
 });
 
-// Cerrar Sesión Admin
 if (btnLogoutAdmin) {
     btnLogoutAdmin.addEventListener('click', () => {
         adminPIN = '';
@@ -597,12 +605,11 @@ modalAdmin.addEventListener('click', (e) => {
     if (e.target === modalAdmin) modalAdmin.classList.remove('activo');
 });
 
-// --- 7. Editor de Marca, Textos y Nombres de Filtros ---
+// --- 7. Editor de Marca & Textos ---
 function poblarFormularioTextos() {
     if (!textosConfig) return;
     const fields = [
         'brandName', 'headerSublogo', 'heroTag', 'heroTitulo', 'heroDesc', 'heroScrollText',
-        'filterTodas', 'filter1', 'filter2', 'filter3',
         'sectionTag', 'sectionTitulo', 'footerTagline', 'footerSub',
         'footerCol1Desc', 'footerCol3Desc', 'copyright', 'badgeText'
     ];
@@ -622,7 +629,6 @@ formTextos.addEventListener('submit', async (e) => {
 
     const fields = [
         'brandName', 'headerSublogo', 'heroTag', 'heroTitulo', 'heroDesc', 'heroScrollText',
-        'filterTodas', 'filter1', 'filter2', 'filter3',
         'sectionTag', 'sectionTitulo', 'footerTagline', 'footerSub',
         'footerCol1Desc', 'footerCol3Desc', 'copyright', 'badgeText'
     ];
@@ -655,6 +661,137 @@ formTextos.addEventListener('submit', async (e) => {
         alert('Error de conexión al actualizar los textos.');
     }
 });
+
+// --- 8. Cargar y Administrar Inventario (Crear, Editar y Eliminar) ---
+btnCancelarEdicion.addEventListener('click', () => resetearFormularioProducto());
+
+function resetearFormularioProducto() {
+    editandoId = null;
+    formAdmin.reset();
+    formProductoTitulo.innerText = "Publicar Nueva Pieza";
+    btnSubmitProducto.innerText = "Publicar Pieza";
+    btnCancelarEdicion.style.display = "none";
+    inputImagenes.required = true;
+}
+
+window.prepararEdicionProducto = (id) => {
+    const prod = todosProductos.find(p => p.id === id);
+    if (!prod) return;
+
+    editandoId = id;
+    document.getElementById('nombre').value = prod.nombre || '';
+    document.getElementById('categoria').value = prod.categoria || '';
+    document.getElementById('precio').value = prod.precio || '';
+    document.getElementById('material').value = prod.material || '';
+    document.getElementById('dimensiones').value = prod.dimensiones || '';
+    document.getElementById('descripcion').value = prod.descripcion || '';
+
+    // Al editar, la carga de fotos nuevas es opcional
+    inputImagenes.required = false;
+
+    formProductoTitulo.innerText = `Editar Pieza: "${prod.nombre}"`;
+    btnSubmitProducto.innerText = "Guardar Cambios de Pieza";
+    btnCancelarEdicion.style.display = "inline-block";
+
+    // Cambiar a la pestaña de inventario si no está activa
+    ocultarPestañas();
+    tabInventarioBtn.classList.add('active');
+    tabInventarioContent.classList.add('active');
+
+    // Scroll hacia el formulario
+    formAdmin.scrollIntoView({ behavior: 'smooth' });
+};
+
+formAdmin.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!adminPIN) {
+        alert('Debes autenticarte primero.');
+        return;
+    }
+
+    const formData = new FormData(formAdmin);
+    const esEdicion = editandoId !== null;
+    const targetUrl = esEdicion ? `${API_URL}/${editandoId}` : API_URL;
+    const method = esEdicion ? 'PUT' : 'POST';
+    
+    try {
+        const res = await fetch(targetUrl, { 
+            method: method, 
+            headers: {
+                'x-admin-pin': adminPIN
+            },
+            body: formData 
+        });
+
+        if(res.ok) {
+            resetearFormularioProducto();
+            cargarTienda();
+            cargarListaAdmin();
+            mostrarToast(esEdicion ? '¡Pieza actualizada con éxito!' : '¡Pieza publicada con éxito en la boutique!');
+        } else {
+            const data = await res.json();
+            alert(data.error || 'Hubo un error al procesar la pieza.');
+        }
+    } catch (error) {
+        alert('Hubo un error de conexión al guardar la pieza.');
+    }
+});
+
+async function cargarListaAdmin() {
+    try {
+        const res = await fetch(API_URL);
+        todosProductos = await res.json();
+        listaAdmin.innerHTML = '';
+        if(todosProductos.length === 0) {
+            listaAdmin.innerHTML = '<li style="color:var(--text-muted); font-style:italic;">No hay piezas registradas.</li>';
+            return;
+        }
+        todosProductos.forEach(p => {
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <div>
+                    <strong>${p.nombre}</strong> <span style="font-size:11px; color:var(--accent-gold);">[${p.categoria}]</span> - ${p.precio}
+                </div>
+                <div class="actions-admin-item">
+                    <button class="btn-editar-admin" onclick="prepararEdicionProducto(${p.id})">✏️ Editar</button>
+                    <button class="btn-eliminar-item" onclick="eliminar(${p.id})">🗑️ Eliminar</button>
+                </div>
+            `;
+            listaAdmin.appendChild(li);
+        });
+    } catch (err) {
+        console.error("Error al cargar lista admin:", err);
+    }
+}
+
+window.eliminar = async (id) => {
+    if(!adminPIN) {
+        alert('Debes autenticarte con tu PIN de administrador.');
+        return;
+    }
+
+    if(confirm('¿Deseas remover esta pieza de la boutique?')) {
+        try {
+            const res = await fetch(`${API_URL}/${id}`, { 
+                method: 'DELETE',
+                headers: {
+                    'x-admin-pin': adminPIN
+                }
+            });
+
+            if (res.ok) {
+                if (editandoId === id) resetearFormularioProducto();
+                cargarTienda();
+                cargarListaAdmin();
+                mostrarToast('Pieza eliminada');
+            } else {
+                alert('No se pudo eliminar. Verifique su PIN.');
+            }
+        } catch (err) {
+            alert("Error al eliminar la pieza.");
+        }
+    }
+};
 
 // Cargar Buzón de Pedidos
 async function cargarBuzonPedidos() {
@@ -756,85 +893,6 @@ window.eliminarPedido = async (id) => {
             }
         } catch (err) {
             alert('Error de conexión al eliminar el pedido.');
-        }
-    }
-};
-
-formAdmin.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    if (!adminPIN) {
-        alert('Debes autenticarte primero.');
-        return;
-    }
-
-    const formData = new FormData(formAdmin);
-    
-    try {
-        const res = await fetch(API_URL, { 
-            method: 'POST', 
-            headers: {
-                'x-admin-pin': adminPIN
-            },
-            body: formData 
-        });
-
-        if(res.ok) {
-            formAdmin.reset();
-            cargarTienda();
-            cargarListaAdmin();
-            mostrarToast('¡Pieza publicada con éxito en la boutique!');
-        } else {
-            const data = await res.json();
-            alert(data.error || 'Hubo un error al subir la pieza.');
-        }
-    } catch (error) {
-        alert('Hubo un error de conexión al subir la pieza.');
-    }
-});
-
-async function cargarListaAdmin() {
-    try {
-        const res = await fetch(API_URL);
-        const productos = await res.json();
-        listaAdmin.innerHTML = '';
-        if(productos.length === 0) {
-            listaAdmin.innerHTML = '<li style="color:var(--text-muted); font-style:italic;">No hay piezas registradas.</li>';
-            return;
-        }
-        productos.forEach(p => {
-            const li = document.createElement('li');
-            li.innerHTML = `<span>${p.nombre} - ${p.precio}</span> <button onclick="eliminar(${p.id})">Eliminar</button>`;
-            listaAdmin.appendChild(li);
-        });
-    } catch (err) {
-        console.error("Error al cargar lista admin:", err);
-    }
-}
-
-window.eliminar = async (id) => {
-    if(!adminPIN) {
-        alert('Debes autenticarte con tu PIN de administrador.');
-        return;
-    }
-
-    if(confirm('¿Deseas remover esta pieza de la boutique?')) {
-        try {
-            const res = await fetch(`${API_URL}/${id}`, { 
-                method: 'DELETE',
-                headers: {
-                    'x-admin-pin': adminPIN
-                }
-            });
-
-            if (res.ok) {
-                cargarTienda();
-                cargarListaAdmin();
-                mostrarToast('Pieza eliminada');
-            } else {
-                alert('No se pudo eliminar. Verifique su PIN.');
-            }
-        } catch (err) {
-            alert("Error al eliminar la pieza.");
         }
     }
 };

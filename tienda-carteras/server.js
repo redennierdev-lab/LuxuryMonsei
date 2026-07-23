@@ -8,7 +8,7 @@ const FormData = require('form-data');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-const ADMIN_PIN = process.env.ADMIN_PIN || '250219070306'; // Nuevo PIN de Administrador
+const ADMIN_PIN = process.env.ADMIN_PIN || '250219070306'; // PIN de Administrador
 
 const IMGBB_API_KEY = process.env.IMGBB_API_KEY || '6d0571b4964723292f230314f308017c';
 
@@ -148,6 +148,48 @@ app.post('/api/productos', upload.array('imagenes', 5), verificarAdmin, async (r
     productos.push(nuevoProducto);
     fs.writeFileSync(DB_PRODUCTOS, JSON.stringify(productos, null, 2));
     res.status(201).json({ message: "Producto guardado con éxito", producto: nuevoProducto });
+});
+
+// Editar Producto
+app.put('/api/productos/:id', upload.array('imagenes', 5), verificarAdmin, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const index = productos.findIndex(p => p.id === id);
+    if (index === -1) {
+        return res.status(404).json({ error: "Producto no encontrado" });
+    }
+
+    let fotos = productos[index].imagenes || [productos[index].imagen];
+
+    if (req.files && req.files.length > 0) {
+        let nuevasFotos = [];
+        for (const f of req.files) {
+            const urlCloud = await subirAImgBB(f.buffer);
+            if (urlCloud) {
+                nuevasFotos.push(urlCloud);
+            } else {
+                const filename = Date.now() + '-' + Math.round(Math.random() * 1E9) + '.jpg';
+                const localPath = path.join(__dirname, 'public', 'uploads', filename);
+                fs.writeFileSync(localPath, f.buffer);
+                nuevasFotos.push(`/uploads/${filename}`);
+            }
+        }
+        fotos = nuevasFotos;
+    }
+
+    productos[index] = {
+        ...productos[index],
+        nombre: req.body.nombre || productos[index].nombre,
+        categoria: req.body.categoria || productos[index].categoria,
+        descripcion: req.body.descripcion || productos[index].descripcion,
+        material: req.body.material || productos[index].material,
+        dimensiones: req.body.dimensiones || productos[index].dimensiones,
+        precio: req.body.precio || productos[index].precio,
+        imagen: fotos[0],
+        imagenes: fotos
+    };
+
+    fs.writeFileSync(DB_PRODUCTOS, JSON.stringify(productos, null, 2));
+    res.json({ message: "Pieza actualizada con éxito", producto: productos[index] });
 });
 
 app.delete('/api/productos/:id', verificarAdmin, (req, res) => {
