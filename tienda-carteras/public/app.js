@@ -5,6 +5,10 @@ const API_URL = (window.location.port && window.location.port !== `${BACKEND_POR
     ? `http://${window.location.hostname || 'localhost'}:${BACKEND_PORT}/api/productos`
     : '/api/productos';
 
+const LOGIN_API_URL = (window.location.port && window.location.port !== `${BACKEND_PORT}`)
+    ? `http://${window.location.hostname || 'localhost'}:${BACKEND_PORT}/api/admin/login`
+    : '/api/admin/login';
+
 function formatFotoUrl(url) {
     if (!url) return '/uploads/tote_taupe.jpg';
     if (url.startsWith('http')) return url;
@@ -22,14 +26,16 @@ let todosProductos = [];
 let filtroActual = 'todas';
 let busquedaActual = '';
 let bolsaCompras = JSON.parse(localStorage.getItem('maison_cart') || '[]');
+let adminPIN = sessionStorage.getItem('maison_admin_pin') || '';
 
-// --- 1. Cargar Boutique y Renderizado ---
+// --- 1. Cargar Boutique Pública ---
 async function cargarTienda() {
     try {
         const res = await fetch(API_URL);
         todosProductos = await res.json();
         renderizarCatalogo();
         actualizarBolsaUI();
+        verificarModoAdminURL();
     } catch (err) {
         console.error("Error al conectar con el backend:", err);
     }
@@ -187,21 +193,15 @@ inputBusqueda.addEventListener('input', (e) => {
     renderizarCatalogo();
 });
 
-// --- 3. Bolsa de Compras ---
+// --- 3. Bolsa de Compras (Clientes) ---
 const cartDrawer = document.getElementById('cart-drawer');
 const cartCount = document.getElementById('cart-count');
 const cartItemsContainer = document.getElementById('cart-items');
 const cartTotalEl = document.getElementById('cart-total');
 const btnCheckout = document.getElementById('btn-checkout');
 
-document.getElementById('btn-abrir-bolsa').addEventListener('click', () => {
-    cartDrawer.classList.add('active');
-});
-
-document.getElementById('btn-cerrar-bolsa').addEventListener('click', () => {
-    cartDrawer.classList.remove('active');
-});
-
+document.getElementById('btn-abrir-bolsa').addEventListener('click', () => cartDrawer.classList.add('active'));
+document.getElementById('btn-cerrar-bolsa').addEventListener('click', () => cartDrawer.classList.remove('active'));
 cartDrawer.addEventListener('click', (e) => {
     if (e.target === cartDrawer) cartDrawer.classList.remove('active');
 });
@@ -325,7 +325,7 @@ modalDetalle.addEventListener('click', (e) => {
     if (e.target === modalDetalle) modalDetalle.classList.remove('activo');
 });
 
-// --- 5. Checkout ---
+// --- 5. Checkout Concierge ---
 const modalCheckout = document.getElementById('modal-checkout');
 const formCheckout = document.getElementById('form-checkout');
 const checkoutResumenLista = document.getElementById('checkout-resumen-lista');
@@ -366,37 +366,108 @@ formCheckout.addEventListener('submit', (e) => {
     modalCheckout.classList.remove('activo');
 });
 
-// --- 6. Admin Panel Modal & Form ---
+// --- 6. Seguridad & Panel de Administración Protegido ---
+const btnAbrirAdmin = document.getElementById('btn-abrir-admin');
 const modalAdmin = document.getElementById('modal-admin');
 const formAdmin = document.getElementById('form-producto');
 const listaAdmin = document.getElementById('lista-admin');
 
-document.getElementById('btn-abrir-admin').addEventListener('click', () => {
+// Si la URL contiene ?admin=1 o ?admin=secret, muestra el botón flotante
+function verificarModoAdminURL() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('admin') || sessionStorage.getItem('maison_admin_unlocked') === 'true') {
+        btnAbrirAdmin.style.display = 'flex';
+    } else {
+        btnAbrirAdmin.style.display = 'none';
+    }
+}
+
+// Activar modo admin haciendo click discreto 3 veces en el footer logo (Atajo secreto para ti)
+let logoClicks = 0;
+const footerLogo = document.querySelector('.footer-logo');
+if (footerLogo) {
+    footerLogo.addEventListener('click', () => {
+        logoClicks++;
+        if (logoClicks >= 3) {
+            sessionStorage.setItem('maison_admin_unlocked', 'true');
+            btnAbrirAdmin.style.display = 'flex';
+            mostrarToast('Modo Administración Desbloqueado');
+            solicitarAutenticacionAdmin();
+        }
+    });
+}
+
+btnAbrirAdmin.addEventListener('click', async () => {
+    if (!adminPIN) {
+        const autenticado = await solicitarAutenticacionAdmin();
+        if (!autenticado) return;
+    }
     modalAdmin.classList.add('activo');
     cargarListaAdmin();
 });
+
+async function solicitarAutenticacionAdmin() {
+    const pinIngresado = prompt('Ingresa el PIN de Seguridad de Administrador:');
+    if (!pinIngresado) return false;
+
+    try {
+        const res = await fetch(LOGIN_API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ pin: pinIngresado })
+        });
+
+        if (res.ok) {
+            adminPIN = pinIngresado;
+            sessionStorage.setItem('maison_admin_pin', adminPIN);
+            sessionStorage.setItem('maison_admin_unlocked', 'true');
+            mostrarToast('Autenticación exitosa');
+            return true;
+        } else {
+            alert('PIN incorrecto. Acceso denegado.');
+            return false;
+        }
+    } catch (err) {
+        alert('Error de conexión con la API.');
+        return false;
+    }
+}
 
 document.getElementById('btn-cerrar-admin').addEventListener('click', () => modalAdmin.classList.remove('activo'));
 modalAdmin.addEventListener('click', (e) => {
     if (e.target === modalAdmin) modalAdmin.classList.remove('activo');
 });
 
+// Guardar producto enviando Header de Autenticación x-admin-pin
 formAdmin.addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (!adminPIN) {
+        alert('Debes autenticarte primero.');
+        return;
+    }
+
     const formData = new FormData(formAdmin);
     
     try {
-        const res = await fetch(API_URL, { method: 'POST', body: formData });
+        const res = await fetch(API_URL, { 
+            method: 'POST', 
+            headers: {
+                'x-admin-pin': adminPIN
+            },
+            body: formData 
+        });
+
         if(res.ok) {
             formAdmin.reset();
             cargarTienda();
             cargarListaAdmin();
             mostrarToast('¡Pieza publicada con éxito en la boutique!');
         } else {
-            alert('Hubo un error al subir la pieza.');
+            const data = await res.json();
+            alert(data.error || 'Hubo un error al subir la pieza.');
         }
     } catch (error) {
-        alert('Hubo un error al subir la pieza.');
+        alert('Hubo un error de conexión al subir la pieza.');
     }
 });
 
@@ -420,12 +491,27 @@ async function cargarListaAdmin() {
 }
 
 window.eliminar = async (id) => {
+    if(!adminPIN) {
+        alert('Debes autenticarte con tu PIN de administrador.');
+        return;
+    }
+
     if(confirm('¿Deseas remover esta pieza de la boutique?')) {
         try {
-            await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-            cargarTienda();
-            cargarListaAdmin();
-            mostrarToast('Pieza eliminada');
+            const res = await fetch(`${API_URL}/${id}`, { 
+                method: 'DELETE',
+                headers: {
+                    'x-admin-pin': adminPIN
+                }
+            });
+
+            if (res.ok) {
+                cargarTienda();
+                cargarListaAdmin();
+                mostrarToast('Pieza eliminada');
+            } else {
+                alert('No se pudo eliminar. Verifique su PIN.');
+            }
         } catch (err) {
             alert("Error al eliminar la pieza.");
         }

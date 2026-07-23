@@ -6,24 +6,25 @@ const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const ADMIN_PIN = process.env.ADMIN_PIN || '1234'; // PIN Secreto para Administrador
 
-// Middlewares - Permite peticiones CORS desde cualquier origen (puerto 3000, 5500, etc.)
+// Middlewares
 app.use(cors({
     origin: '*',
     methods: ['GET', 'POST', 'DELETE', 'PUT'],
-    allowedHeaders: ['Content-Type']
+    allowedHeaders: ['Content-Type', 'x-admin-pin']
 }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Configuración de Multer para la carga de imágenes
+// Configuración de Multer
 const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, path.join(__dirname, 'public', 'uploads')),
     filename: (req, file, cb) => cb(null, Date.now() + '-' + Math.round(Math.random() * 1E9) + path.extname(file.originalname))
 });
 const upload = multer({ storage: storage });
 
-// Base de datos local JSON (Ruta absoluta asegurada)
+// Base de datos local JSON
 const DB_FILE = path.join(__dirname, 'productos.json');
 let productos = [];
 
@@ -41,12 +42,23 @@ function cargarProductos() {
 
 cargarProductos();
 
-// Rutas API
+// Middleware de seguridad para validar PIN de administrador
+function verificarAdmin(req, res, next) {
+    const pinEnviado = req.headers['x-admin-pin'] || req.body.pin;
+    if (pinEnviado === ADMIN_PIN) {
+        next();
+    } else {
+        return res.status(401).json({ error: "No autorizado. PIN de administrador incorrecto." });
+    }
+}
+
+// 1. Ruta Pública para Clientes (Consultar productos)
 app.get('/api/productos', (req, res) => {
     res.json(cargarProductos());
 });
 
-app.post('/api/productos', upload.array('imagenes', 5), (req, res) => {
+// 2. Rutas Protegidas para Ti (Crear y Eliminar productos requerirán PIN)
+app.post('/api/productos', upload.array('imagenes', 5), verificarAdmin, (req, res) => {
     let fotos = [];
     if (req.files && req.files.length > 0) {
         fotos = req.files.map(f => `/uploads/${f.filename}`);
@@ -69,17 +81,27 @@ app.post('/api/productos', upload.array('imagenes', 5), (req, res) => {
     };
     productos.push(nuevoProducto);
     fs.writeFileSync(DB_FILE, JSON.stringify(productos, null, 2));
-    res.status(201).json({ message: "Producto guardado", producto: nuevoProducto });
+    res.status(201).json({ message: "Producto guardado con éxito", producto: nuevoProducto });
 });
 
-app.delete('/api/productos/:id', (req, res) => {
+app.delete('/api/productos/:id', verificarAdmin, (req, res) => {
     const id = parseInt(req.params.id);
     productos = productos.filter(p => p.id !== id);
     fs.writeFileSync(DB_FILE, JSON.stringify(productos, null, 2));
-    res.json({ message: "Eliminado" });
+    res.json({ message: "Pieza eliminada correctamente" });
+});
+
+// Verificar PIN de Admin desde el frontend
+app.post('/api/admin/login', (req, res) => {
+    const { pin } = req.body;
+    if (pin === ADMIN_PIN) {
+        res.json({ success: true, message: "Autenticado correctamente" });
+    } else {
+        res.status(401).json({ success: false, message: "PIN incorrecto" });
+    }
 });
 
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Backend API escuchando en el puerto ${PORT}`);
-    console.log(`Frontend y API disponibles en: http://localhost:${PORT}`);
+    console.log(`Boutique pública y panel de administración listos.`);
 });
