@@ -6,7 +6,7 @@ const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-const ADMIN_PIN = process.env.ADMIN_PIN || '1234'; // PIN Secreto para Administrador
+const ADMIN_PIN = process.env.ADMIN_PIN || '1234';
 
 // Middlewares
 app.use(cors({
@@ -16,6 +16,25 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Configuración de Firebase Admin SDK (Si se proveen credenciales)
+let admin = null;
+let bucket = null;
+
+try {
+    admin = require('firebase-admin');
+    if (process.env.FIREBASE_CREDENTIALS_JSON && process.env.FIREBASE_STORAGE_BUCKET) {
+        const serviceAccount = JSON.parse(process.env.FIREBASE_CREDENTIALS_JSON);
+        admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount),
+            storageBucket: process.env.FIREBASE_STORAGE_BUCKET
+        });
+        bucket = admin.storage().bucket();
+        console.log("🔥 Firebase Storage inicializado con éxito.");
+    }
+} catch (e) {
+    console.log("ℹ️ Servidor iniciado sin credenciales de Firebase Storage. Se usará almacenamiento local.");
+}
 
 // Configuración de Multer para la carga de imágenes
 const storage = multer.diskStorage({
@@ -71,10 +90,28 @@ app.get('/api/productos', (req, res) => {
     res.json(cargarProductos());
 });
 
-app.post('/api/productos', upload.array('imagenes', 5), verificarAdmin, (req, res) => {
+app.post('/api/productos', upload.array('imagenes', 5), verificarAdmin, async (req, res) => {
     let fotos = [];
+    
     if (req.files && req.files.length > 0) {
-        fotos = req.files.map(f => `/uploads/${f.filename}`);
+        for (const f of req.files) {
+            if (bucket) {
+                try {
+                    const destination = `uploads/${f.filename}`;
+                    await bucket.upload(f.path, {
+                        destination: destination,
+                        public: true
+                    });
+                    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${destination}`;
+                    fotos.push(publicUrl);
+                } catch (err) {
+                    console.error("Error subiendo foto a Firebase, usando fallback local:", err);
+                    fotos.push(`/uploads/${f.filename}`);
+                }
+            } else {
+                fotos.push(`/uploads/${f.filename}`);
+            }
+        }
     } else if (req.file) {
         fotos = [`/uploads/${req.file.filename}`];
     } else {
@@ -105,8 +142,6 @@ app.delete('/api/productos/:id', verificarAdmin, (req, res) => {
 });
 
 // --- RUTAS DE BUZÓN DE PEDIDOS / SOLICITUDES ---
-
-// 1. Enviar Pedido desde el Frontend (Público para clientes)
 app.post('/api/pedidos', (req, res) => {
     const { nombre, email, telefono, direccion, items, total } = req.body;
 
@@ -129,7 +164,7 @@ app.post('/api/pedidos', (req, res) => {
     };
 
     const listaPedidos = cargarPedidos();
-    listaPedidos.unshift(nuevoPedido); // Pone el pedido más reciente arriba
+    listaPedidos.unshift(nuevoPedido);
     fs.writeFileSync(DB_PEDIDOS, JSON.stringify(listaPedidos, null, 2));
 
     res.status(201).json({ 
@@ -139,12 +174,10 @@ app.post('/api/pedidos', (req, res) => {
     });
 });
 
-// 2. Obtener lista de pedidos en el buzón (Protegido Admin)
 app.get('/api/pedidos', verificarAdmin, (req, res) => {
     res.json(cargarPedidos());
 });
 
-// 3. Eliminar pedido del buzón (Protegido Admin)
 app.delete('/api/pedidos/:id', verificarAdmin, (req, res) => {
     const id = parseInt(req.params.id);
     let lista = cargarPedidos();
@@ -153,7 +186,7 @@ app.delete('/api/pedidos/:id', verificarAdmin, (req, res) => {
     res.json({ success: true, message: "Pedido eliminado del buzón" });
 });
 
-// Verificar PIN de Admin
+// Autenticación Admin
 app.post('/api/admin/login', (req, res) => {
     const { pin } = req.body;
     if (pin === ADMIN_PIN) {
@@ -165,5 +198,5 @@ app.post('/api/admin/login', (req, res) => {
 
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Backend API escuchando en el puerto ${PORT}`);
-    console.log(`Buzón de pedidos y catálogo listos.`);
+    console.log(`Buzón de pedidos, catálogo y Firebase Storage integrados.`);
 });
