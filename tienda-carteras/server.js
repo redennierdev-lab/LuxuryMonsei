@@ -14,35 +14,36 @@ app.use(cors({
     allowedHeaders: ['Content-Type']
 }));
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Configuración de Multer para la carga de imágenes
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, 'public/uploads/'),
+    destination: (req, file, cb) => cb(null, path.join(__dirname, 'public', 'uploads')),
     filename: (req, file, cb) => cb(null, Date.now() + '-' + Math.round(Math.random() * 1E9) + path.extname(file.originalname))
 });
 const upload = multer({ storage: storage });
 
-// Base de datos local JSON
-const DB_FILE = 'productos.json';
+// Base de datos local JSON (Ruta absoluta asegurada)
+const DB_FILE = path.join(__dirname, 'productos.json');
 let productos = [];
 
-if (fs.existsSync(DB_FILE)) {
-    try {
-        productos = JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
-    } catch (e) {
-        productos = [];
+function cargarProductos() {
+    if (fs.existsSync(DB_FILE)) {
+        try {
+            const data = fs.readFileSync(DB_FILE, 'utf-8');
+            productos = JSON.parse(data);
+        } catch (e) {
+            console.error("Error leyendo DB_FILE:", e);
+        }
     }
+    return productos;
 }
+
+cargarProductos();
 
 // Rutas API
 app.get('/api/productos', (req, res) => {
-    if (fs.existsSync(DB_FILE)) {
-        try {
-            productos = JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
-        } catch (e) {}
-    }
-    res.json(productos);
+    res.json(cargarProductos());
 });
 
 app.post('/api/productos', upload.array('imagenes', 5), (req, res) => {

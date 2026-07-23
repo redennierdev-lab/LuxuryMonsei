@@ -1,1 +1,43 @@
-[]
+[
+  {
+    "id": 1700000000001,
+    "nombre": "Le Tote Minimaliste",
+    "categoria": "Edición Limitada",
+    "descripcion": "Una silueta atemporal confeccionada para la mujer moderna. Elegancia discreta con acabados pulidos a mano.",
+    "material": "Piel de Becerro Italiana Grano Fino",
+    "dimensiones": "34 cm x 26 cm x 14 cm",
+    "precio": "$1,450 USD",
+    "imagen": "/uploads/tote_taupe.jpg",
+    "imagenes": [
+      "/uploads/tote_taupe.jpg",
+      "/uploads/tote_taupe_detail.jpg"
+    ]
+  },
+  {
+    "id": 1700000000002,
+    "nombre": "Pochette Noire",
+    "categoria": "Colección Noche",
+    "descripcion": "Diseño depurado en tono negro profundo. Cadena sutil en baño de oro cepillado de 18k.",
+    "material": "Cuero Vacuno Nappa Suave",
+    "dimensiones": "24 cm x 15 cm x 6 cm",
+    "precio": "$980 USD",
+    "imagen": "/uploads/clutch_noir.jpg",
+    "imagenes": [
+      "/uploads/clutch_noir.jpg",
+      "/uploads/clutch_noir_interior.jpg"
+    ]
+  },
+  {
+    "id": 1700000000003,
+    "nombre": "L'Baguette Éburné",
+    "categoria": "Esenciales de Día",
+    "descripcion": "Estructura impecable en marfil satinado con pespuntes artesanales visibles.",
+    "material": "Piel Full Grain Marfil",
+    "dimensiones": "28 cm x 13 cm x 8 cm",
+    "precio": "$1,200 USD",
+    "imagen": "/uploads/baguette_ivory.jpg",
+    "imagenes": [
+      "/uploads/baguette_ivory.jpg"
+    ]
+  }
+]
