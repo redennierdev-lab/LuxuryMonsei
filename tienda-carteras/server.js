@@ -17,32 +17,46 @@ app.use(cors({
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Configuración de Multer
+// Configuración de Multer para la carga de imágenes
 const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, path.join(__dirname, 'public', 'uploads')),
     filename: (req, file, cb) => cb(null, Date.now() + '-' + Math.round(Math.random() * 1E9) + path.extname(file.originalname))
 });
 const upload = multer({ storage: storage });
 
-// Base de datos local JSON
-const DB_FILE = path.join(__dirname, 'productos.json');
+// Archivos de Base de Datos JSON
+const DB_PRODUCTOS = path.join(__dirname, 'productos.json');
+const DB_PEDIDOS = path.join(__dirname, 'pedidos.json');
+
 let productos = [];
+let pedidos = [];
 
 function cargarProductos() {
-    if (fs.existsSync(DB_FILE)) {
+    if (fs.existsSync(DB_PRODUCTOS)) {
         try {
-            const data = fs.readFileSync(DB_FILE, 'utf-8');
-            productos = JSON.parse(data);
+            productos = JSON.parse(fs.readFileSync(DB_PRODUCTOS, 'utf-8'));
         } catch (e) {
-            console.error("Error leyendo DB_FILE:", e);
+            console.error("Error leyendo DB_PRODUCTOS:", e);
         }
     }
     return productos;
 }
 
-cargarProductos();
+function cargarPedidos() {
+    if (fs.existsSync(DB_PEDIDOS)) {
+        try {
+            pedidos = JSON.parse(fs.readFileSync(DB_PEDIDOS, 'utf-8'));
+        } catch (e) {
+            console.error("Error leyendo DB_PEDIDOS:", e);
+        }
+    }
+    return pedidos;
+}
 
-// Middleware de seguridad para validar PIN de administrador
+cargarProductos();
+cargarPedidos();
+
+// Middleware para verificar PIN de Administrador
 function verificarAdmin(req, res, next) {
     const pinEnviado = req.headers['x-admin-pin'] || req.body.pin;
     if (pinEnviado === ADMIN_PIN) {
@@ -52,12 +66,11 @@ function verificarAdmin(req, res, next) {
     }
 }
 
-// 1. Ruta Pública para Clientes (Consultar productos)
+// --- RUTAS DE PRODUCTOS ---
 app.get('/api/productos', (req, res) => {
     res.json(cargarProductos());
 });
 
-// 2. Rutas Protegidas para Ti (Crear y Eliminar productos requerirán PIN)
 app.post('/api/productos', upload.array('imagenes', 5), verificarAdmin, (req, res) => {
     let fotos = [];
     if (req.files && req.files.length > 0) {
@@ -80,18 +93,67 @@ app.post('/api/productos', upload.array('imagenes', 5), verificarAdmin, (req, re
         imagenes: fotos
     };
     productos.push(nuevoProducto);
-    fs.writeFileSync(DB_FILE, JSON.stringify(productos, null, 2));
+    fs.writeFileSync(DB_PRODUCTOS, JSON.stringify(productos, null, 2));
     res.status(201).json({ message: "Producto guardado con éxito", producto: nuevoProducto });
 });
 
 app.delete('/api/productos/:id', verificarAdmin, (req, res) => {
     const id = parseInt(req.params.id);
     productos = productos.filter(p => p.id !== id);
-    fs.writeFileSync(DB_FILE, JSON.stringify(productos, null, 2));
+    fs.writeFileSync(DB_PRODUCTOS, JSON.stringify(productos, null, 2));
     res.json({ message: "Pieza eliminada correctamente" });
 });
 
-// Verificar PIN de Admin desde el frontend
+// --- RUTAS DE BUZÓN DE PEDIDOS / SOLICITUDES ---
+
+// 1. Enviar Pedido desde el Frontend (Público para clientes)
+app.post('/api/pedidos', (req, res) => {
+    const { nombre, email, telefono, direccion, items, total } = req.body;
+
+    if (!nombre || !email || !items || items.length === 0) {
+        return res.status(400).json({ error: "Datos incompletos para procesar la orden." });
+    }
+
+    const nuevoPedido = {
+        id: Date.now(),
+        fecha: new Date().toLocaleString('es-ES', { timeZone: 'America/Caracas' }),
+        cliente: {
+            nombre,
+            email,
+            telefono,
+            direccion
+        },
+        items,
+        total,
+        estado: 'Pendiente'
+    };
+
+    const listaPedidos = cargarPedidos();
+    listaPedidos.unshift(nuevoPedido); // Pone el pedido más reciente arriba
+    fs.writeFileSync(DB_PEDIDOS, JSON.stringify(listaPedidos, null, 2));
+
+    res.status(201).json({ 
+        success: true, 
+        message: "¡Tu solicitud de adquisición ha sido recibida en el buzón del atelier!",
+        pedido: nuevoPedido 
+    });
+});
+
+// 2. Obtener lista de pedidos en el buzón (Protegido Admin)
+app.get('/api/pedidos', verificarAdmin, (req, res) => {
+    res.json(cargarPedidos());
+});
+
+// 3. Eliminar pedido del buzón (Protegido Admin)
+app.delete('/api/pedidos/:id', verificarAdmin, (req, res) => {
+    const id = parseInt(req.params.id);
+    let lista = cargarPedidos();
+    lista = lista.filter(p => p.id !== id);
+    fs.writeFileSync(DB_PEDIDOS, JSON.stringify(lista, null, 2));
+    res.json({ success: true, message: "Pedido eliminado del buzón" });
+});
+
+// Verificar PIN de Admin
 app.post('/api/admin/login', (req, res) => {
     const { pin } = req.body;
     if (pin === ADMIN_PIN) {
@@ -103,5 +165,5 @@ app.post('/api/admin/login', (req, res) => {
 
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Backend API escuchando en el puerto ${PORT}`);
-    console.log(`Boutique pública y panel de administración listos.`);
+    console.log(`Buzón de pedidos y catálogo listos.`);
 });

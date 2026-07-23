@@ -1,9 +1,13 @@
 const BACKEND_PORT = 3001;
 
-// Si el frontend está corriendo en un puerto distinto (ej. Live Server en 5500 o puerto 3000), redirige al backend en 3001
+// Si el frontend está corriendo en un puerto distinto, redirige al backend en 3001
 const API_URL = (window.location.port && window.location.port !== `${BACKEND_PORT}`)
     ? `http://${window.location.hostname || 'localhost'}:${BACKEND_PORT}/api/productos`
     : '/api/productos';
+
+const PEDIDOS_API_URL = (window.location.port && window.location.port !== `${BACKEND_PORT}`)
+    ? `http://${window.location.hostname || 'localhost'}:${BACKEND_PORT}/api/pedidos`
+    : '/api/pedidos';
 
 const LOGIN_API_URL = (window.location.port && window.location.port !== `${BACKEND_PORT}`)
     ? `http://${window.location.hostname || 'localhost'}:${BACKEND_PORT}/api/admin/login`
@@ -23,6 +27,7 @@ const catalogoTitulo = document.getElementById('catalogo-titulo');
 
 // Estado Global de la App
 let todosProductos = [];
+let todosPedidos = [];
 let filtroActual = 'todas';
 let busquedaActual = '';
 let bolsaCompras = JSON.parse(localStorage.getItem('maison_cart') || '[]');
@@ -325,7 +330,7 @@ modalDetalle.addEventListener('click', (e) => {
     if (e.target === modalDetalle) modalDetalle.classList.remove('activo');
 });
 
-// --- 5. Checkout Concierge ---
+// --- 5. Checkout Concierge (Envía la Orden al Buzón del Backend) ---
 const modalCheckout = document.getElementById('modal-checkout');
 const formCheckout = document.getElementById('form-checkout');
 const checkoutResumenLista = document.getElementById('checkout-resumen-lista');
@@ -355,24 +360,86 @@ modalCheckout.addEventListener('click', (e) => {
     if (e.target === modalCheckout) modalCheckout.classList.remove('activo');
 });
 
-formCheckout.addEventListener('submit', (e) => {
+formCheckout.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const cliente = document.getElementById('cliente-nombre').value;
-    alert(`¡Gracias ${cliente}! Tu solicitud de reserva concierge ha sido recibida. Un asesor de Maison Élégance se pondrá en contacto contigo a la brevedad.`);
-    
-    bolsaCompras = [];
-    guardarBolsa();
-    actualizarBolsaUI();
-    modalCheckout.classList.remove('activo');
+    const nombre = document.getElementById('cliente-nombre').value;
+    const email = document.getElementById('cliente-email').value;
+    const telefono = document.getElementById('cliente-telefono').value;
+    const direccion = document.getElementById('cliente-direccion').value;
+    const total = `$${calcularTotal().toLocaleString()} USD`;
+
+    const payload = {
+        nombre,
+        email,
+        telefono,
+        direccion,
+        items: bolsaCompras,
+        total
+    };
+
+    try {
+        const res = await fetch(PEDIDOS_API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+            alert(`¡Gracias ${nombre}! Tu solicitud de reserva Concierge (Orden #${data.pedido ? data.pedido.id : ''}) ha sido enviada al atelier. Un asesor se pondrá en contacto contigo a la brevedad.`);
+            
+            // Vaciar bolsa de compras
+            bolsaCompras = [];
+            guardarBolsa();
+            actualizarBolsaUI();
+            formCheckout.reset();
+            modalCheckout.classList.remove('activo');
+            mostrarToast('Solicitud enviada al atelier');
+
+            // Actualizar buzón de pedidos si admin está abierto
+            if (adminPIN) cargarBuzonPedidos();
+        } else {
+            alert(data.error || 'Error al enviar la solicitud.');
+        }
+    } catch (err) {
+        alert('Error de conexión al enviar el pedido.');
+    }
 });
 
-// --- 6. Seguridad & Panel de Administración Protegido ---
+// --- 6. Panel de Gestión (Buzón de Pedidos & Inventario) ---
 const btnAbrirAdmin = document.getElementById('btn-abrir-admin');
 const modalAdmin = document.getElementById('modal-admin');
 const formAdmin = document.getElementById('form-producto');
 const listaAdmin = document.getElementById('lista-admin');
+const buzonPedidosLista = document.getElementById('buzon-pedidos-lista');
+const badgePedidosCount = document.getElementById('badge-pedidos-count');
+const tabBadgePedidos = document.getElementById('tab-badge-pedidos');
 
-// Si la URL contiene ?admin=1 o ?admin=secret, muestra el botón flotante
+// Pestañas Admin
+const tabBuzonBtn = document.getElementById('tab-buzon-btn');
+const tabInventarioBtn = document.getElementById('tab-inventario-btn');
+const tabBuzonContent = document.getElementById('tab-buzon-content');
+const tabInventarioContent = document.getElementById('tab-inventario-content');
+
+if (tabBuzonBtn && tabInventarioBtn) {
+    tabBuzonBtn.addEventListener('click', () => {
+        tabBuzonBtn.classList.add('active');
+        tabInventarioBtn.classList.remove('active');
+        tabBuzonContent.classList.add('active');
+        tabInventarioContent.classList.remove('active');
+        if (adminPIN) cargarBuzonPedidos();
+    });
+
+    tabInventarioBtn.addEventListener('click', () => {
+        tabInventarioBtn.classList.add('active');
+        tabBuzonBtn.classList.remove('active');
+        tabInventarioContent.classList.add('active');
+        tabBuzonContent.classList.remove('active');
+        if (adminPIN) cargarListaAdmin();
+    });
+}
+
 function verificarModoAdminURL() {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has('admin') || sessionStorage.getItem('maison_admin_unlocked') === 'true') {
@@ -382,7 +449,7 @@ function verificarModoAdminURL() {
     }
 }
 
-// Activar modo admin haciendo click discreto 3 veces en el footer logo (Atajo secreto para ti)
+// Atajo secreto en footer logo
 let logoClicks = 0;
 const footerLogo = document.querySelector('.footer-logo');
 if (footerLogo) {
@@ -403,6 +470,7 @@ btnAbrirAdmin.addEventListener('click', async () => {
         if (!autenticado) return;
     }
     modalAdmin.classList.add('activo');
+    cargarBuzonPedidos();
     cargarListaAdmin();
 });
 
@@ -438,7 +506,113 @@ modalAdmin.addEventListener('click', (e) => {
     if (e.target === modalAdmin) modalAdmin.classList.remove('activo');
 });
 
-// Guardar producto enviando Header de Autenticación x-admin-pin
+// Cargar Buzón de Pedidos desde el Backend
+async function cargarBuzonPedidos() {
+    if (!adminPIN) return;
+    try {
+        const res = await fetch(PEDIDOS_API_URL, {
+            headers: { 'x-admin-pin': adminPIN }
+        });
+        if (res.ok) {
+            todosPedidos = await res.json();
+            renderizarBuzonPedidos();
+        }
+    } catch (err) {
+        console.error("Error al cargar buzón de pedidos:", err);
+    }
+}
+
+function renderizarBuzonPedidos() {
+    const count = todosPedidos.length;
+    if (badgePedidosCount) badgePedidosCount.innerText = count;
+    if (tabBadgePedidos) tabBadgePedidos.innerText = count;
+
+    if (!buzonPedidosLista) return;
+    buzonPedidosLista.innerHTML = '';
+
+    if (count === 0) {
+        buzonPedidosLista.innerHTML = `
+            <div style="text-align:center; padding: 40px 10px; color:var(--text-muted);">
+                <p style="font-family:var(--font-title); font-size:18px; font-style:italic; margin-bottom:6px;">Tu buzón de pedidos está vacío.</p>
+                <p style="font-size:11px;">Las solicitudes de adquisición de tus clientes aparecerán aquí automáticamente.</p>
+            </div>
+        `;
+        return;
+    }
+
+    todosPedidos.forEach(ped => {
+        const div = document.createElement('div');
+        div.className = 'pedido-card';
+
+        // Sanitización para WhatsApp
+        const cleanPhone = (ped.cliente.telefono || '').replace(/[^0-9]/g, '');
+        const waMessage = encodeURIComponent(`Hola ${ped.cliente.nombre}, te contactamos de Maison Élégance sobre tu solicitud de reserva #${ped.id}`);
+        const waUrl = cleanPhone ? `https://wa.me/${cleanPhone}?text=${waMessage}` : '#';
+
+        let itemsHTML = '';
+        if (ped.items && ped.items.length > 0) {
+            ped.items.forEach(it => {
+                itemsHTML += `
+                    <div class="pedido-item-row">
+                        <span>${it.cantidad}x ${it.nombre}</span>
+                        <span>${it.precio}</span>
+                    </div>
+                `;
+            });
+        }
+
+        div.innerHTML = `
+            <div class="pedido-card-header">
+                <span class="pedido-id">Solicitud #${ped.id}</span>
+                <span class="pedido-fecha">${ped.fecha || ''}</span>
+            </div>
+            <div class="pedido-cliente-info">
+                <strong>${ped.cliente.nombre}</strong>
+                <span>📧 ${ped.cliente.email}</span>
+                <span>📞 ${ped.cliente.telefono || 'No especificado'}</span>
+                <span>📍 ${ped.cliente.direccion}</span>
+                <div class="pedido-contact-actions">
+                    ${cleanPhone ? `<a href="${waUrl}" target="_blank" class="btn-whatsapp">💬 WhatsApp</a>` : ''}
+                    <a href="mailto:${ped.cliente.email}?subject=Solicitud Maison Elegance %23${ped.id}" class="btn-email-link">✉️ Enviar Correo</a>
+                </div>
+            </div>
+            <div class="pedido-items-box">
+                ${itemsHTML}
+                <div class="pedido-total-row">
+                    <span>Total Estimado:</span>
+                    <span>${ped.total}</span>
+                </div>
+            </div>
+            <button class="btn-eliminar-pedido" onclick="eliminarPedido(${ped.id})">Eliminar del Buzón</button>
+        `;
+
+        buzonPedidosLista.appendChild(div);
+    });
+}
+
+// Eliminar pedido del buzón
+window.eliminarPedido = async (id) => {
+    if (!adminPIN) return;
+    if (confirm(`¿Deseas eliminar la solicitud #${id} del buzón?`)) {
+        try {
+            const res = await fetch(`${PEDIDOS_API_URL}/${id}`, {
+                method: 'DELETE',
+                headers: { 'x-admin-pin': adminPIN }
+            });
+
+            if (res.ok) {
+                mostrarToast('Solicitud eliminada del buzón');
+                cargarBuzonPedidos();
+            } else {
+                alert('No se pudo eliminar el pedido.');
+            }
+        } catch (err) {
+            alert('Error de conexión al eliminar el pedido.');
+        }
+    }
+};
+
+// Formulario de guardar producto
 formAdmin.addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!adminPIN) {
@@ -516,7 +690,7 @@ window.eliminar = async (id) => {
             alert("Error al eliminar la pieza.");
         }
     }
-}
+};
 
 function mostrarToast(mensaje) {
     const toast = document.getElementById('toast-notification');

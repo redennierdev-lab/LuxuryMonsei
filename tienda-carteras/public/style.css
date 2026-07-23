@@ -652,68 +652,196 @@ body {
     color: var(--text-espresso);
 }
 
-/* Modal Detalle Rápido */
-.modal-detalle-content {
-    max-width: 700px !important;
+/* Admin Tabs & Buzón de Pedidos */
+.admin-tabs {
+    display: flex;
+    gap: 10px;
+    border-bottom: 1px solid var(--border-fine);
+    margin-bottom: 25px;
 }
 
-.detalle-body {
+.admin-tab {
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 10px 14px;
+    font-family: var(--font-body);
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.admin-tab.active {
+    color: var(--text-espresso);
+    border-bottom-color: var(--accent-gold);
+    font-weight: 600;
+}
+
+.tab-badge, .badge-pedidos {
+    background: var(--accent-gold);
+    color: var(--text-espresso);
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 10px;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.buzon-header {
+    margin-bottom: 20px;
+}
+
+.buzon-header h4 {
+    font-family: var(--font-title);
+    font-size: 20px;
+    font-style: italic;
+    margin-bottom: 4px;
+}
+
+.buzon-sub {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.buzon-lista {
     display: flex;
     flex-direction: column;
     gap: 20px;
 }
 
-.detalle-galeria {
-    width: 100%;
-    aspect-ratio: 1 / 1;
-    background: #F2EDE4;
+.pedido-card {
+    background: var(--bg-white);
+    border: 1px solid var(--border-fine);
+    padding: 20px;
+    position: relative;
 }
 
-.detalle-info .descripcion {
-    margin: 12px 0 20px;
-    color: var(--text-muted);
-}
-
-.detalles-tecnicos {
-    background: #F4EFE6;
-    padding: 16px;
-    margin-bottom: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.spec-row {
+.pedido-card-header {
     display: flex;
     justify-content: space-between;
-    font-size: 12px;
+    align-items: center;
+    border-bottom: 1px solid var(--border-fine);
+    padding-bottom: 12px;
+    margin-bottom: 14px;
 }
 
-.badge-stock {
-    color: var(--accent-gold);
+.pedido-id {
+    font-family: var(--font-title);
+    font-size: 16px;
     font-weight: 600;
 }
 
-.cuidados-box {
-    border-left: 2px solid var(--accent-gold);
-    padding-left: 12px;
-    margin-bottom: 20px;
+.pedido-fecha {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-transform: uppercase;
 }
 
-.cuidados-box h4 {
-    font-size: 11px;
+.pedido-cliente-info {
+    font-size: 13px;
+    margin-bottom: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.pedido-cliente-info strong {
+    font-family: var(--font-title);
+    font-size: 16px;
+    color: var(--text-espresso);
+}
+
+.pedido-contact-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.btn-whatsapp {
+    background: #25D366;
+    color: #FFF;
+    text-decoration: none;
+    font-size: 10px;
     text-transform: uppercase;
-    letter-spacing: 1.5px;
-    color: var(--accent-gold);
+    letter-spacing: 1px;
+    padding: 6px 12px;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 500;
+}
+
+.btn-email-link {
+    background: var(--text-espresso);
+    color: #FFF;
+    text-decoration: none;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 6px 12px;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.pedido-items-box {
+    background: #F8F5F0;
+    padding: 12px;
+    margin-bottom: 14px;
+    border-left: 2px solid var(--accent-gold);
+}
+
+.pedido-item-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
     margin-bottom: 4px;
 }
 
-.cuidados-box p {
-    font-size: 12px;
-    color: var(--text-muted);
+.pedido-total-row {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-title);
+    font-size: 15px;
+    font-weight: 600;
+    margin-top: 8px;
+    border-top: 1px solid var(--border-fine);
+    padding-top: 6px;
 }
 
-/* Toast Notifications */
+.btn-eliminar-pedido {
+    background: transparent;
+    border: 1px solid #b30000;
+    color: #b30000;
+    padding: 8px 16px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.3s ease;
+}
+
+.btn-eliminar-pedido:hover {
+    background: #b30000;
+    color: #FFF;
+}
+
+/* Toast Notification */
 .toast {
     position: fixed;
     bottom: 30px;
@@ -737,79 +865,7 @@ body {
     transform: translateX(-50%) translateY(0);
 }
 
-/* Checkout Form Resumen */
-.checkout-intro {
-    font-size: 13px;
-    color: var(--text-muted);
-    margin-bottom: 20px;
-}
-
-.checkout-resumen {
-    background: #F4EFE6;
-    padding: 16px;
-    margin: 20px 0;
-}
-
-.checkout-resumen h4 {
-    font-family: var(--font-title);
-    font-size: 16px;
-    margin-bottom: 12px;
-}
-
-.checkout-total-line {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 12px;
-    border-top: 1px solid var(--border-fine);
-    padding-top: 10px;
-    font-family: var(--font-title);
-    font-size: 16px;
-}
-
-/* Footer */
-.footer {
-    text-align: center;
-    padding: 50px 20px;
-    border-top: 1px solid var(--border-fine);
-    background: #FAF7F2;
-    font-size: 12px;
-    color: var(--text-muted);
-}
-
-.footer-logo {
-    font-family: var(--font-title);
-    font-size: 20px;
-    letter-spacing: 2px;
-    color: var(--text-espresso);
-    margin-bottom: 6px;
-}
-
-.footer-sub {
-    font-style: italic;
-    color: var(--accent-gold);
-    margin-bottom: 20px;
-}
-
-.footer-links {
-    display: flex;
-    justify-content: center;
-    gap: 20px;
-    margin-bottom: 20px;
-}
-
-.footer-links a {
-    color: var(--text-espresso);
-    text-decoration: none;
-    text-transform: uppercase;
-    font-size: 10px;
-    letter-spacing: 2px;
-}
-
-.copyright {
-    font-size: 10px;
-}
-
-/* Botón Flotante Admin */
+/* Modal Admin Base */
 .btn-admin-flotante {
     position: fixed;
     bottom: 25px;
@@ -842,7 +898,6 @@ body {
 
 .btn-admin-flotante .line { width: 15px; height: 1px; background: var(--accent-gold); }
 
-/* Modal Admin Overlay */
 .modal-overlay { 
     display: none; 
     position: fixed; 
@@ -871,9 +926,9 @@ body {
     display: flex; 
     justify-content: space-between; 
     align-items: center; 
-    margin-bottom: 30px; 
+    margin-bottom: 25px; 
     border-bottom: 1px solid var(--border-fine); 
-    padding-bottom: 20px; 
+    padding-bottom: 18px; 
 }
 .modal-header h3 { font-family: var(--font-title); font-size: 26px; font-style: italic; }
 .modal-header button { background: none; border: none; font-size: 20px; color: var(--text-muted); cursor: pointer; }
@@ -945,10 +1000,5 @@ body {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
         gap: 40px;
-    }
-    .detalle-body {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 30px;
     }
 }

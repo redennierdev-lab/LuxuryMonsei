@@ -189,65 +189,87 @@
 
     <!-- Botón Flotante Admin (Panel Oculto) -->
     <button id="btn-abrir-admin" class="btn-admin-flotante" aria-label="Gestión de Piezas">
-        <span class="line"></span> Gestión de Piezas
+        <span class="line"></span> Panel de Gestión
+        <span id="badge-pedidos-count" class="badge-pedidos">0</span>
     </button>
 
-    <!-- Modal Admin Overlay -->
+    <!-- Modal Admin Overlay (Buzón de Pedidos + Gestión de Productos) -->
     <div id="modal-admin" class="modal-overlay">
-        <div class="modal-mobile">
+        <div class="modal-mobile modal-admin-custom">
             <div class="modal-header">
-                <h3>Gestión de Boutique</h3>
+                <h3>Atelier Concierge</h3>
                 <button id="btn-cerrar-admin" aria-label="Cerrar">&times;</button>
             </div>
 
-            <!-- Formulario de carga con soporte para múltiples imágenes y cámara -->
-            <form id="form-producto" class="form-luxury" enctype="multipart/form-data">
-                <div class="form-group">
-                    <label for="nombre">Nombre de la Pieza</label>
-                    <input type="text" id="nombre" name="nombre" placeholder="ej. Le Tote Minimaliste" required>
-                </div>
-
-                <div class="grid-2">
-                    <div class="form-group">
-                        <label for="categoria">Categoría</label>
-                        <input type="text" id="categoria" name="categoria" placeholder="ej. Edición Limitada" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="precio">Precio</label>
-                        <input type="text" id="precio" name="precio" placeholder="ej. $1,450 USD" required>
-                    </div>
-                </div>
-
-                <div class="grid-2">
-                    <div class="form-group">
-                        <label for="material">Material</label>
-                        <input type="text" id="material" name="material" placeholder="ej. Piel de Becerro" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="dimensiones">Dimensiones</label>
-                        <input type="text" id="dimensiones" name="dimensiones" placeholder="ej. 34 x 26 x 14 cm" required>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="descripcion">Descripción Breve</label>
-                    <textarea id="descripcion" name="descripcion" placeholder="Detalles de artesanía y acabado..." required></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label for="imagenes">Fotografías de la Pieza (Una o varias fotos / Cámara)</label>
-                    <input type="file" id="imagenes" name="imagenes" accept="image/*" capture="environment" multiple required class="input-file-luxury">
-                    <small>En móviles puedes seleccionar varias fotos o tomarlas secuencialmente. Se podrán deslizar horizontalmente.</small>
-                </div>
-
-                <button type="submit" class="btn-guardar">Publicar Pieza</button>
-            </form>
-
-            <!-- Lista de Administración -->
-            <div class="admin-list-section">
-                <h4>Inventario Actual</h4>
-                <ul id="lista-admin"></ul>
+            <!-- Pestañas de navegación Admin -->
+            <div class="admin-tabs">
+                <button id="tab-buzon-btn" class="admin-tab active">
+                    📩 Buzón de Solicitudes <span id="tab-badge-pedidos" class="tab-badge">0</span>
+                </button>
+                <button id="tab-inventario-btn" class="admin-tab">
+                    👜 Gestión de Inventario
+                </button>
             </div>
+
+            <!-- Pestaña 1: Buzón de Solicitudes de Pedidos -->
+            <div id="tab-buzon-content" class="tab-content active">
+                <div class="buzon-header">
+                    <h4>Solicitudes de Adquisición Recibidas</h4>
+                    <p class="buzon-sub">Los pedidos enviados por los clientes quedan guardados en este buzón hasta que decidas eliminarlos.</p>
+                </div>
+                <div id="buzon-pedidos-lista" class="buzon-lista"></div>
+            </div>
+
+            <!-- Pestaña 2: Formulario de carga e Inventario -->
+            <div id="tab-inventario-content" class="tab-content">
+                <form id="form-producto" class="form-luxury" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="nombre">Nombre de la Pieza</label>
+                        <input type="text" id="nombre" name="nombre" placeholder="ej. Le Tote Minimaliste" required>
+                    </div>
+
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label for="categoria">Categoría</label>
+                            <input type="text" id="categoria" name="categoria" placeholder="ej. Edición Limitada" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="precio">Precio</label>
+                            <input type="text" id="precio" name="precio" placeholder="ej. $1,450 USD" required>
+                        </div>
+                    </div>
+
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label for="material">Material</label>
+                            <input type="text" id="material" name="material" placeholder="ej. Piel de Becerro" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="dimensiones">Dimensiones</label>
+                            <input type="text" id="dimensiones" name="dimensiones" placeholder="ej. 34 x 26 x 14 cm" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="descripcion">Descripción Breve</label>
+                        <textarea id="descripcion" name="descripcion" placeholder="Detalles de artesanía y acabado..." required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="imagenes">Fotografías de la Pieza (Cámara / Galería)</label>
+                        <input type="file" id="imagenes" name="imagenes" accept="image/*" capture="environment" multiple required class="input-file-luxury">
+                        <small>En móviles puedes seleccionar varias fotos o tomarlas con la cámara trasera.</small>
+                    </div>
+
+                    <button type="submit" class="btn-guardar">Publicar Pieza</button>
+                </form>
+
+                <div class="admin-list-section">
+                    <h4>Inventario Actual</h4>
+                    <ul id="lista-admin"></ul>
+                </div>
+            </div>
+
         </div>
     </div>
 
