@@ -1,4 +1,19 @@
-const API_URL = '/api/productos';
+const BACKEND_PORT = 3001;
+
+// Si el frontend está corriendo en un puerto distinto (ej. Live Server en 5500 o puerto 3000), redirige al backend en 3001
+const API_URL = (window.location.port && window.location.port !== `${BACKEND_PORT}`)
+    ? `http://${window.location.hostname || 'localhost'}:${BACKEND_PORT}/api/productos`
+    : '/api/productos';
+
+function formatFotoUrl(url) {
+    if (!url) return '/uploads/tote_taupe.jpg';
+    if (url.startsWith('http')) return url;
+    if (window.location.port && window.location.port !== `${BACKEND_PORT}`) {
+        return `http://${window.location.hostname || 'localhost'}:${BACKEND_PORT}${url}`;
+    }
+    return url;
+}
+
 const catalogo = document.getElementById('catalogo-container');
 const catalogoTitulo = document.getElementById('catalogo-titulo');
 
@@ -16,14 +31,13 @@ async function cargarTienda() {
         renderizarCatalogo();
         actualizarBolsaUI();
     } catch (err) {
-        console.error("Error al cargar la boutique:", err);
+        console.error("Error al conectar con el backend:", err);
     }
 }
 
 function renderizarCatalogo() {
     catalogo.innerHTML = '';
     
-    // Filtrado por categoría y búsqueda
     let productosFiltrados = todosProductos.filter(p => {
         const coincideCategoria = (filtroActual === 'todas') || 
             (p.categoria && p.categoria.toLowerCase() === filtroActual.toLowerCase());
@@ -52,7 +66,8 @@ function renderizarCatalogo() {
         const div = document.createElement('div');
         div.className = 'producto';
 
-        const fotos = (p.imagenes && p.imagenes.length > 0) ? p.imagenes : [p.imagen];
+        const rawFotos = (p.imagenes && p.imagenes.length > 0) ? p.imagenes : [p.imagen];
+        const fotos = rawFotos.map(formatFotoUrl);
         const tieneVarias = fotos.length > 1;
 
         let carruselHTML = `
@@ -123,7 +138,6 @@ function renderizarCatalogo() {
     animarScroll();
 }
 
-// Navegación en carrusel
 window.scrollCarrusel = (id, direccion) => {
     const container = document.getElementById(`carrusel-${id}`);
     if (!container) return;
@@ -131,7 +145,6 @@ window.scrollCarrusel = (id, direccion) => {
     container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
 };
 
-// Animación de entrada al hacer scroll
 function animarScroll() {
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
@@ -174,7 +187,7 @@ inputBusqueda.addEventListener('input', (e) => {
     renderizarCatalogo();
 });
 
-// --- 3. Bolsa de Compras (Cart System) ---
+// --- 3. Bolsa de Compras ---
 const cartDrawer = document.getElementById('cart-drawer');
 const cartCount = document.getElementById('cart-count');
 const cartItemsContainer = document.getElementById('cart-items');
@@ -197,6 +210,8 @@ window.agregarABolsa = (id) => {
     const prod = todosProductos.find(p => p.id === id);
     if (!prod) return;
 
+    const fotoFinal = formatFotoUrl(prod.imagen || (prod.imagenes && prod.imagenes[0]));
+
     const existeIndex = bolsaCompras.findIndex(item => item.id === id);
     if (existeIndex > -1) {
         bolsaCompras[existeIndex].cantidad += 1;
@@ -205,7 +220,7 @@ window.agregarABolsa = (id) => {
             id: prod.id,
             nombre: prod.nombre,
             precio: prod.precio,
-            imagen: prod.imagen || (prod.imagenes && prod.imagenes[0]),
+            imagen: fotoFinal,
             cantidad: 1
         });
     }
@@ -249,7 +264,7 @@ function actualizarBolsaUI() {
         const div = document.createElement('div');
         div.className = 'cart-item';
         div.innerHTML = `
-            <img src="${item.imagen}" alt="${item.nombre}">
+            <img src="${formatFotoUrl(item.imagen)}" alt="${item.nombre}">
             <div class="cart-item-info">
                 <h4>${item.nombre}</h4>
                 <p>${item.cantidad} x ${item.precio}</p>
@@ -263,7 +278,7 @@ function actualizarBolsaUI() {
     cartTotalEl.innerText = `$${total.toLocaleString()} USD`;
 }
 
-// --- 4. Modal Detalle Rápido (Quick View) ---
+// --- 4. Modal Detalle Rápido ---
 const modalDetalle = document.getElementById('modal-detalle');
 const detalleGaleria = document.getElementById('detalle-galeria');
 const detalleNombre = document.getElementById('detalle-nombre');
@@ -287,7 +302,9 @@ window.abrirDetalle = (id) => {
     detalleDimensiones.innerText = p.dimensiones;
     detallePrecio.innerText = p.precio;
 
-    const fotos = (p.imagenes && p.imagenes.length > 0) ? p.imagenes : [p.imagen];
+    const rawFotos = (p.imagenes && p.imagenes.length > 0) ? p.imagenes : [p.imagen];
+    const fotos = rawFotos.map(formatFotoUrl);
+
     let galeriaHTML = `<div class="producto-carrusel" id="carrusel-det-${p.id}">`;
     fotos.forEach(f => {
         galeriaHTML += `<div class="carrusel-slide"><img src="${f}" alt="${p.nombre}"></div>`;
@@ -308,7 +325,7 @@ modalDetalle.addEventListener('click', (e) => {
     if (e.target === modalDetalle) modalDetalle.classList.remove('activo');
 });
 
-// --- 5. Checkout / Solicitar Adquisición ---
+// --- 5. Checkout ---
 const modalCheckout = document.getElementById('modal-checkout');
 const formCheckout = document.getElementById('form-checkout');
 const checkoutResumenLista = document.getElementById('checkout-resumen-lista');
@@ -415,7 +432,6 @@ window.eliminar = async (id) => {
     }
 }
 
-// --- 7. Sistema de Notificaciones Toast ---
 function mostrarToast(mensaje) {
     const toast = document.getElementById('toast-notification');
     const toastMsg = document.getElementById('toast-message');

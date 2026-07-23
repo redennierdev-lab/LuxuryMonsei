@@ -5,21 +5,25 @@ const fs = require('fs');
 const path = require('path');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3001;
 
-// Middlewares
-app.use(cors());
+// Middlewares - Permite peticiones CORS desde cualquier origen (puerto 3000, 5500, etc.)
+app.use(cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'DELETE', 'PUT'],
+    allowedHeaders: ['Content-Type']
+}));
 app.use(express.json());
 app.use(express.static('public'));
 
-// Configuración de Multer para múltiples archivos
+// Configuración de Multer para la carga de imágenes
 const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, 'public/uploads/'),
     filename: (req, file, cb) => cb(null, Date.now() + '-' + Math.round(Math.random() * 1E9) + path.extname(file.originalname))
 });
 const upload = multer({ storage: storage });
 
-// Base de datos local
+// Base de datos local JSON
 const DB_FILE = 'productos.json';
 let productos = [];
 
@@ -75,5 +79,6 @@ app.delete('/api/productos/:id', (req, res) => {
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Servidor corriendo. Accede desde tu celular en: http://localhost:${PORT}`);
+    console.log(`Backend API escuchando en el puerto ${PORT}`);
+    console.log(`Frontend y API disponibles en: http://localhost:${PORT}`);
 });
