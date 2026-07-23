@@ -67,21 +67,47 @@
         <div id="catalogo-container" class="catalogo-container"></div>
     </main>
 
-    <!-- Footer -->
+    <!-- Footer de Alta Costura con Líneas Divisorias Elegantes -->
     <footer class="footer">
+        <div class="footer-gold-bar"></div>
         <div class="footer-content">
-            <p class="footer-logo">Maison Élégance</p>
-            <p class="footer-sub">Atelier de Maroquinerie • Atemporalidad & Perfección</p>
-            <div class="footer-links">
-                <a href="#hero">Inicio</a>
-                <a href="#catalogo-container">Catálogo</a>
-                <a href="#" onclick="alert('Atención al cliente Maison Élégance: concierge@maisonelegance.com')">Concierge</a>
+            <div class="footer-brand-section">
+                <p class="footer-logo">Maison Élégance</p>
+                <span class="footer-tagline">Paris • New York • Tokyo</span>
+                <p class="footer-sub">Atelier de Maroquinerie • Atemporalidad &amp; Perfección</p>
             </div>
-            <p class="copyright">&copy; 2026 Maison Élégance. Todos los derechos reservados.</p>
+
+            <div class="footer-divider-line"></div>
+
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <h4>Atelier</h4>
+                    <p>Confección artesanal de piezas únicas con certificación de autenticidad.</p>
+                </div>
+                <div class="footer-col">
+                    <h4>Navegación</h4>
+                    <div class="footer-links">
+                        <a href="#main-header">Inicio</a>
+                        <a href="#catalogo-container">Catálogo</a>
+                        <a href="#" onclick="alert('Atención al cliente Concierge Maison Élégance: concierge@maisonelegance.com')">Concierge Private</a>
+                    </div>
+                </div>
+                <div class="footer-col">
+                    <h4>Contacto</h4>
+                    <p>concierge@maisonelegance.com<br>Atención Privada 24/7</p>
+                </div>
+            </div>
+
+            <div class="footer-divider-line"></div>
+
+            <div class="footer-bottom">
+                <p class="copyright">&copy; 2026 Maison Élégance. Todos los derechos reservados.</p>
+                <span class="quiet-badge">Quiet Luxury Collection</span>
+            </div>
         </div>
     </footer>
 
-    <!-- Sidebar Bolsa de Compras (Cart Drawer) -->
+    <!-- Sidebar Bolsa de Compras Privada e Individual por Dispositivo -->
     <div id="cart-drawer" class="cart-drawer-overlay">
         <aside class="cart-drawer">
             <div class="cart-header">
@@ -101,7 +127,7 @@
         </aside>
     </div>
 
-    <!-- Modal Detalle Rápido de Producto (Quick View) -->
+    <!-- Modal Detalle Rápido de Producto con Líneas Elegantes Divisorias -->
     <div id="modal-detalle" class="modal-overlay">
         <div class="modal-mobile modal-detalle-content">
             <div class="modal-header">
@@ -110,22 +136,32 @@
             </div>
             <div class="detalle-body">
                 <div id="detalle-galeria" class="detalle-galeria"></div>
+                
                 <div class="detalle-info">
-                    <span id="detalle-categoria" class="categoria"></span>
-                    <h2 id="detalle-titulo"></h2>
-                    <p id="detalle-descripcion" class="descripcion"></p>
+                    <div class="detalle-header-block">
+                        <span id="detalle-categoria" class="categoria">Limitada</span>
+                        <h2 id="detalle-titulo">Cartera Lemon</h2>
+                    </div>
+
+                    <div class="luxury-divider"></div>
+
+                    <p id="detalle-descripcion" class="descripcion">Delicata</p>
                     
+                    <div class="luxury-divider"></div>
+
                     <div class="detalles-tecnicos">
                         <div class="spec-row">
-                            <span>Material Noble</span>
-                            <span id="detalle-material"></span>
+                            <span class="spec-label">Material Noble</span>
+                            <span id="detalle-material" class="spec-val">Cuero Italiano</span>
                         </div>
+                        <div class="luxury-divider-light"></div>
                         <div class="spec-row">
-                            <span>Dimensiones</span>
-                            <span id="detalle-dimensiones"></span>
+                            <span class="spec-label">Dimensiones</span>
+                            <span id="detalle-dimensiones" class="spec-val">23 x 36 x 12</span>
                         </div>
+                        <div class="luxury-divider-light"></div>
                         <div class="spec-row">
-                            <span>Disponibilidad</span>
+                            <span class="spec-label">Disponibilidad</span>
                             <span class="badge-stock">Pieza Única de Atelier</span>
                         </div>
                     </div>
@@ -135,8 +171,12 @@
                         <p>Guardar en su funda antipolvo original. Evitar la exposición prolongada a la luz directa y la humedad.</p>
                     </div>
 
-                    <span id="detalle-precio" class="precio"></span>
-                    <button id="btn-add-cart-detalle" class="btn-comprar">Añadir a la Bolsa</button>
+                    <div class="luxury-divider"></div>
+
+                    <div class="precio-action-block">
+                        <span id="detalle-precio" class="precio">44</span>
+                        <button id="btn-add-cart-detalle" class="btn-comprar">Añadir a la Bolsa</button>
+                    </div>
                 </div>
             </div>
         </div>
