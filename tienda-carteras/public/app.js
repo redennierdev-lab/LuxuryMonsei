@@ -1,6 +1,6 @@
 const BACKEND_PORT = 3001;
 
-// Si el frontend está corriendo en un puerto distinto, redirige al backend en 3001
+// Rutas de API
 const API_URL = (window.location.port && window.location.port !== `${BACKEND_PORT}`)
     ? `http://${window.location.hostname || 'localhost'}:${BACKEND_PORT}/api/productos`
     : '/api/productos';
@@ -8,6 +8,10 @@ const API_URL = (window.location.port && window.location.port !== `${BACKEND_POR
 const PEDIDOS_API_URL = (window.location.port && window.location.port !== `${BACKEND_PORT}`)
     ? `http://${window.location.hostname || 'localhost'}:${BACKEND_PORT}/api/pedidos`
     : '/api/pedidos';
+
+const TEXTOS_API_URL = (window.location.port && window.location.port !== `${BACKEND_PORT}`)
+    ? `http://${window.location.hostname || 'localhost'}:${BACKEND_PORT}/api/textos`
+    : '/api/textos';
 
 const LOGIN_API_URL = (window.location.port && window.location.port !== `${BACKEND_PORT}`)
     ? `http://${window.location.hostname || 'localhost'}:${BACKEND_PORT}/api/admin/login`
@@ -28,14 +32,16 @@ const catalogoTitulo = document.getElementById('catalogo-titulo');
 // Estado Global de la App
 let todosProductos = [];
 let todosPedidos = [];
+let textosConfig = {};
 let filtroActual = 'todas';
 let busquedaActual = '';
 let bolsaCompras = JSON.parse(localStorage.getItem('maison_cart') || '[]');
 let adminPIN = sessionStorage.getItem('maison_admin_pin') || '';
 
-// --- 1. Cargar Boutique Pública ---
+// --- 1. Cargar Boutique & Textos Personalizados ---
 async function cargarTienda() {
     try {
+        await cargarTextosSitio();
         const res = await fetch(API_URL);
         todosProductos = await res.json();
         renderizarCatalogo();
@@ -44,6 +50,60 @@ async function cargarTienda() {
     } catch (err) {
         console.error("Error al conectar con el backend:", err);
     }
+}
+
+async function cargarTextosSitio() {
+    try {
+        const res = await fetch(TEXTOS_API_URL);
+        if (res.ok) {
+            textosConfig = await res.json();
+            aplicarTextosEnDOM();
+        }
+    } catch (err) {
+        console.error("Error cargando textos:", err);
+    }
+}
+
+function aplicarTextosEnDOM() {
+    if (!textosConfig) return;
+
+    if (textosConfig.headerSublogo) document.getElementById('txt-header-sublogo').innerText = textosConfig.headerSublogo;
+    if (textosConfig.heroTag) document.getElementById('txt-hero-tag').innerText = textosConfig.heroTag;
+    if (textosConfig.heroTitulo) document.getElementById('txt-hero-titulo').innerText = textosConfig.heroTitulo;
+    if (textosConfig.heroDesc) document.getElementById('txt-hero-desc').innerText = textosConfig.heroDesc;
+    if (textosConfig.heroScrollText) document.getElementById('txt-hero-scroll').innerText = textosConfig.heroScrollText;
+
+    // Filtros
+    if (textosConfig.filterTodas) {
+        const btnF = document.getElementById('btn-filter-todas');
+        btnF.innerText = textosConfig.filterTodas;
+    }
+    if (textosConfig.filter1) {
+        const btnF1 = document.getElementById('btn-filter-1');
+        btnF1.innerText = textosConfig.filter1;
+        btnF1.dataset.filter = textosConfig.filter1;
+    }
+    if (textosConfig.filter2) {
+        const btnF2 = document.getElementById('btn-filter-2');
+        btnF2.innerText = textosConfig.filter2;
+        btnF2.dataset.filter = textosConfig.filter2;
+    }
+    if (textosConfig.filter3) {
+        const btnF3 = document.getElementById('btn-filter-3');
+        btnF3.innerText = textosConfig.filter3;
+        btnF3.dataset.filter = textosConfig.filter3;
+    }
+
+    if (textosConfig.sectionTag) document.getElementById('txt-section-tag').innerText = textosConfig.sectionTag;
+    if (textosConfig.sectionTitulo && filtroActual === 'todas') catalogoTitulo.innerText = textosConfig.sectionTitulo;
+
+    // Footer
+    if (textosConfig.footerTagline) document.getElementById('txt-footer-tagline').innerText = textosConfig.footerTagline;
+    if (textosConfig.footerSub) document.getElementById('txt-footer-sub').innerText = textosConfig.footerSub;
+    if (textosConfig.footerCol1Desc) document.getElementById('txt-footer-col1-desc').innerText = textosConfig.footerCol1Desc;
+    if (textosConfig.footerCol3Desc) document.getElementById('txt-footer-col3-desc').innerText = textosConfig.footerCol3Desc;
+    if (textosConfig.copyright) document.getElementById('txt-footer-copyright').innerText = textosConfig.copyright;
+    if (textosConfig.badgeText) document.getElementById('txt-footer-badge').innerText = textosConfig.badgeText;
 }
 
 function renderizarCatalogo() {
@@ -95,7 +155,7 @@ function renderizarCatalogo() {
             `;
         });
 
-        carruselHTML += `</div>`; // .producto-carrusel
+        carruselHTML += `</div>`;
 
         if (tieneVarias) {
             carruselHTML += `
@@ -109,7 +169,7 @@ function renderizarCatalogo() {
             carruselHTML += `</div>`;
         }
 
-        carruselHTML += `</div>`; // .producto-galeria
+        carruselHTML += `</div>`;
 
         div.innerHTML = carruselHTML + `
             <div class="producto-info">
@@ -171,7 +231,7 @@ document.querySelectorAll('.filter-btn').forEach(btn => {
         document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         filtroActual = btn.dataset.filter;
-        catalogoTitulo.innerText = filtroActual === 'todas' ? 'Catálogo General' : filtroActual;
+        catalogoTitulo.innerText = filtroActual === 'todas' ? (textosConfig.sectionTitulo || 'Catálogo General') : filtroActual;
         renderizarCatalogo();
     });
 });
@@ -198,7 +258,7 @@ inputBusqueda.addEventListener('input', (e) => {
     renderizarCatalogo();
 });
 
-// --- 3. Bolsa de Compras (Clientes) ---
+// --- 3. Bolsa de Compras ---
 const cartDrawer = document.getElementById('cart-drawer');
 const cartCount = document.getElementById('cart-count');
 const cartItemsContainer = document.getElementById('cart-items');
@@ -330,7 +390,7 @@ modalDetalle.addEventListener('click', (e) => {
     if (e.target === modalDetalle) modalDetalle.classList.remove('activo');
 });
 
-// --- 5. Checkout Concierge (Envía la Orden al Buzón del Backend) ---
+// --- 5. Checkout Concierge ---
 const modalCheckout = document.getElementById('modal-checkout');
 const formCheckout = document.getElementById('form-checkout');
 const checkoutResumenLista = document.getElementById('checkout-resumen-lista');
@@ -389,7 +449,6 @@ formCheckout.addEventListener('submit', async (e) => {
         if (res.ok) {
             alert(`¡Gracias ${nombre}! Tu solicitud de reserva Concierge (Orden #${data.pedido ? data.pedido.id : ''}) ha sido enviada al atelier. Un asesor se pondrá en contacto contigo a la brevedad.`);
             
-            // Vaciar bolsa de compras
             bolsaCompras = [];
             guardarBolsa();
             actualizarBolsaUI();
@@ -397,7 +456,6 @@ formCheckout.addEventListener('submit', async (e) => {
             modalCheckout.classList.remove('activo');
             mostrarToast('Solicitud enviada al atelier');
 
-            // Actualizar buzón de pedidos si admin está abierto
             if (adminPIN) cargarBuzonPedidos();
         } else {
             alert(data.error || 'Error al enviar la solicitud.');
@@ -407,10 +465,12 @@ formCheckout.addEventListener('submit', async (e) => {
     }
 });
 
-// --- 6. Panel de Gestión (Buzón de Pedidos & Inventario) ---
+// --- 6. Botón de Administración Individual & Pestañas ---
 const btnAbrirAdmin = document.getElementById('btn-abrir-admin');
+const btnAdminHeader = document.getElementById('btn-admin-header');
 const modalAdmin = document.getElementById('modal-admin');
 const formAdmin = document.getElementById('form-producto');
+const formTextos = document.getElementById('form-textos');
 const listaAdmin = document.getElementById('lista-admin');
 const buzonPedidosLista = document.getElementById('buzon-pedidos-lista');
 const badgePedidosCount = document.getElementById('badge-pedidos-count');
@@ -419,25 +479,37 @@ const tabBadgePedidos = document.getElementById('tab-badge-pedidos');
 // Pestañas Admin
 const tabBuzonBtn = document.getElementById('tab-buzon-btn');
 const tabInventarioBtn = document.getElementById('tab-inventario-btn');
+const tabTextosBtn = document.getElementById('tab-textos-btn');
 const tabBuzonContent = document.getElementById('tab-buzon-content');
 const tabInventarioContent = document.getElementById('tab-inventario-content');
+const tabTextosContent = document.getElementById('tab-textos-content');
 
-if (tabBuzonBtn && tabInventarioBtn) {
+if (tabBuzonBtn && tabInventarioBtn && tabTextosBtn) {
     tabBuzonBtn.addEventListener('click', () => {
+        ocultarPestañas();
         tabBuzonBtn.classList.add('active');
-        tabInventarioBtn.classList.remove('active');
         tabBuzonContent.classList.add('active');
-        tabInventarioContent.classList.remove('active');
         if (adminPIN) cargarBuzonPedidos();
     });
 
     tabInventarioBtn.addEventListener('click', () => {
+        ocultarPestañas();
         tabInventarioBtn.classList.add('active');
-        tabBuzonBtn.classList.remove('active');
         tabInventarioContent.classList.add('active');
-        tabBuzonContent.classList.remove('active');
         if (adminPIN) cargarListaAdmin();
     });
+
+    tabTextosBtn.addEventListener('click', () => {
+        ocultarPestañas();
+        tabTextosBtn.classList.add('active');
+        tabTextosContent.classList.add('active');
+        poblarFormularioTextos();
+    });
+}
+
+function ocultarPestañas() {
+    [tabBuzonBtn, tabInventarioBtn, tabTextosBtn].forEach(b => b.classList.remove('active'));
+    [tabBuzonContent, tabInventarioContent, tabTextosContent].forEach(c => c.classList.remove('active'));
 }
 
 function verificarModoAdminURL() {
@@ -449,22 +521,18 @@ function verificarModoAdminURL() {
     }
 }
 
-// Atajo secreto en footer logo
-let logoClicks = 0;
-const footerLogo = document.querySelector('.footer-logo');
-if (footerLogo) {
-    footerLogo.addEventListener('click', () => {
-        logoClicks++;
-        if (logoClicks >= 3) {
-            sessionStorage.setItem('maison_admin_unlocked', 'true');
-            btnAbrirAdmin.style.display = 'flex';
-            mostrarToast('Modo Administración Desbloqueado');
-            solicitarAutenticacionAdmin();
-        }
+// Abrir Admin desde el Botón Individual del Encabezado
+if (btnAdminHeader) {
+    btnAdminHeader.addEventListener('click', async () => {
+        abrirPanelAdministrador();
     });
 }
 
 btnAbrirAdmin.addEventListener('click', async () => {
+    abrirPanelAdministrador();
+});
+
+async function abrirPanelAdministrador() {
     if (!adminPIN) {
         const autenticado = await solicitarAutenticacionAdmin();
         if (!autenticado) return;
@@ -472,7 +540,7 @@ btnAbrirAdmin.addEventListener('click', async () => {
     modalAdmin.classList.add('activo');
     cargarBuzonPedidos();
     cargarListaAdmin();
-});
+}
 
 async function solicitarAutenticacionAdmin() {
     const pinIngresado = prompt('Ingresa el PIN de Seguridad de Administrador:');
@@ -489,6 +557,7 @@ async function solicitarAutenticacionAdmin() {
             adminPIN = pinIngresado;
             sessionStorage.setItem('maison_admin_pin', adminPIN);
             sessionStorage.setItem('maison_admin_unlocked', 'true');
+            btnAbrirAdmin.style.display = 'flex';
             mostrarToast('Autenticación exitosa');
             return true;
         } else {
@@ -506,7 +575,66 @@ modalAdmin.addEventListener('click', (e) => {
     if (e.target === modalAdmin) modalAdmin.classList.remove('activo');
 });
 
-// Cargar Buzón de Pedidos desde el Backend
+// --- 7. Editor de Textos y Nombres de Filtros ---
+function poblarFormularioTextos() {
+    if (!textosConfig) return;
+    const fields = [
+        'headerSublogo', 'heroTag', 'heroTitulo', 'heroDesc', 'heroScrollText',
+        'filterTodas', 'filter1', 'filter2', 'filter3',
+        'sectionTag', 'sectionTitulo', 'footerTagline', 'footerSub',
+        'footerCol1Desc', 'footerCol3Desc', 'copyright', 'badgeText'
+    ];
+
+    fields.forEach(field => {
+        const el = document.getElementById(`inp-${field}`);
+        if (el) el.value = textosConfig[field] || '';
+    });
+}
+
+formTextos.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!adminPIN) {
+        alert('Debes estar autenticado como Administrador.');
+        return;
+    }
+
+    const fields = [
+        'headerSublogo', 'heroTag', 'heroTitulo', 'heroDesc', 'heroScrollText',
+        'filterTodas', 'filter1', 'filter2', 'filter3',
+        'sectionTag', 'sectionTitulo', 'footerTagline', 'footerSub',
+        'footerCol1Desc', 'footerCol3Desc', 'copyright', 'badgeText'
+    ];
+
+    const payload = {};
+    fields.forEach(field => {
+        const el = document.getElementById(`inp-${field}`);
+        if (el) payload[field] = el.value;
+    });
+
+    try {
+        const res = await fetch(TEXTOS_API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-admin-pin': adminPIN
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+            const data = await res.json();
+            textosConfig = data.textos;
+            aplicarTextosEnDOM();
+            mostrarToast('¡Textos del sitio actualizados con éxito!');
+        } else {
+            alert('No se pudieron actualizar los textos. Verifica tu PIN.');
+        }
+    } catch (err) {
+        alert('Error de conexión al actualizar los textos.');
+    }
+});
+
+// Cargar Buzón de Pedidos
 async function cargarBuzonPedidos() {
     if (!adminPIN) return;
     try {
@@ -544,7 +672,6 @@ function renderizarBuzonPedidos() {
         const div = document.createElement('div');
         div.className = 'pedido-card';
 
-        // Sanitización para WhatsApp
         const cleanPhone = (ped.cliente.telefono || '').replace(/[^0-9]/g, '');
         const waMessage = encodeURIComponent(`Hola ${ped.cliente.nombre}, te contactamos de Maison Élégance sobre tu solicitud de reserva #${ped.id}`);
         const waUrl = cleanPhone ? `https://wa.me/${cleanPhone}?text=${waMessage}` : '#';
@@ -590,7 +717,6 @@ function renderizarBuzonPedidos() {
     });
 }
 
-// Eliminar pedido del buzón
 window.eliminarPedido = async (id) => {
     if (!adminPIN) return;
     if (confirm(`¿Deseas eliminar la solicitud #${id} del buzón?`)) {
@@ -612,7 +738,6 @@ window.eliminarPedido = async (id) => {
     }
 };
 
-// Formulario de guardar producto
 formAdmin.addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!adminPIN) {

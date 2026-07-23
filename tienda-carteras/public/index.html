@@ -18,10 +18,14 @@
         <div class="header-container">
             <div class="brand-box">
                 <a href="#" class="logo">Maison Élégance</a>
-                <span class="sub-logo">Paris • New York • Tokyo</span>
+                <span id="txt-header-sublogo" class="sub-logo">Paris • New York • Tokyo</span>
             </div>
             
             <div class="header-actions">
+                <button id="btn-admin-header" class="icon-btn-admin" title="Acceso Administrador" aria-label="Acceso Admin">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                    <span class="admin-text-label">Acceso Admin</span>
+                </button>
                 <button id="btn-buscar-toggle" class="icon-btn" aria-label="Buscar">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                 </button>
@@ -41,51 +45,51 @@
 
     <!-- Hero Section -->
     <section class="hero">
-        <span class="hero-tag">Haute Maroquinerie 2026</span>
-        <h1>Elegancia Silenciosa</h1>
-        <p class="hero-desc">Piezas de autor confeccionadas artesanalmente. Lujo discreto, pieles nobles y siluetas perfeccionadas para perdurar en el tiempo.</p>
+        <span id="txt-hero-tag" class="hero-tag">Haute Maroquinerie 2026</span>
+        <h1 id="txt-hero-titulo">Elegancia Silenciosa</h1>
+        <p id="txt-hero-desc" class="hero-desc">Piezas de autor confeccionadas artesanalmente. Lujo discreto, pieles nobles y siluetas perfeccionadas para perdurar en el tiempo.</p>
         <div class="scroll-indicator">
-            <span>Explorar Colección</span>
+            <span id="txt-hero-scroll">Explorar Colección</span>
             <div class="scroll-line"></div>
         </div>
     </section>
 
-    <!-- Filtros de Categoría -->
+    <!-- Filtros de Categoría Personalizables -->
     <nav class="categorias-nav">
-        <button class="filter-btn active" data-filter="todas">Todas las Piezas</button>
-        <button class="filter-btn" data-filter="Edición Limitada">Edición Limitada</button>
-        <button class="filter-btn" data-filter="Colección Noche">Colección Noche</button>
-        <button class="filter-btn" data-filter="Esenciales de Día">Esenciales de Día</button>
+        <button id="btn-filter-todas" class="filter-btn active" data-filter="todas">Todas las Piezas</button>
+        <button id="btn-filter-1" class="filter-btn" data-filter="Edición Limitada">Edición Limitada</button>
+        <button id="btn-filter-2" class="filter-btn" data-filter="Colección Noche">Colección Noche</button>
+        <button id="btn-filter-3" class="filter-btn" data-filter="Esenciales de Día">Esenciales de Día</button>
     </nav>
 
     <!-- Catalogo Section -->
     <main class="catalogo-wrapper">
         <div class="section-title">
-            <span>Boutique Exclusiva</span>
+            <span id="txt-section-tag">Boutique Exclusiva</span>
             <h2 id="catalogo-titulo">Catálogo General</h2>
         </div>
         <div id="catalogo-container" class="catalogo-container"></div>
     </main>
 
-    <!-- Footer de Alta Costura con Líneas Divisorias Elegantes -->
+    <!-- Footer de Alta Costura -->
     <footer class="footer">
         <div class="footer-gold-bar"></div>
         <div class="footer-content">
             <div class="footer-brand-section">
                 <p class="footer-logo">Maison Élégance</p>
-                <span class="footer-tagline">Paris • New York • Tokyo</span>
-                <p class="footer-sub">Atelier de Maroquinerie • Atemporalidad &amp; Perfección</p>
+                <span id="txt-footer-tagline" class="footer-tagline">Paris • New York • Tokyo</span>
+                <p id="txt-footer-sub" class="footer-sub">Atelier de Maroquinerie • Atemporalidad &amp; Perfección</p>
             </div>
 
             <div class="footer-divider-line"></div>
 
             <div class="footer-grid">
                 <div class="footer-col">
-                    <h4>Atelier</h4>
-                    <p>Confección artesanal de piezas únicas con certificación de autenticidad.</p>
+                    <h4 id="txt-footer-col1-tit">Atelier</h4>
+                    <p id="txt-footer-col1-desc">Confección artesanal de piezas únicas con certificación de autenticidad.</p>
                 </div>
                 <div class="footer-col">
-                    <h4>Navegación</h4>
+                    <h4 id="txt-footer-col2-tit">Navegación</h4>
                     <div class="footer-links">
                         <a href="#main-header">Inicio</a>
                         <a href="#catalogo-container">Catálogo</a>
@@ -93,21 +97,21 @@
                     </div>
                 </div>
                 <div class="footer-col">
-                    <h4>Contacto</h4>
-                    <p>concierge@maisonelegance.com<br>Atención Privada 24/7</p>
+                    <h4 id="txt-footer-col3-tit">Contacto</h4>
+                    <p id="txt-footer-col3-desc">concierge@maisonelegance.com<br>Atención Privada 24/7</p>
                 </div>
             </div>
 
             <div class="footer-divider-line"></div>
 
             <div class="footer-bottom">
-                <p class="copyright">&copy; 2026 Maison Élégance. Todos los derechos reservados.</p>
-                <span class="quiet-badge">Quiet Luxury Collection</span>
+                <p id="txt-footer-copyright" class="copyright">&copy; 2026 Maison Élégance. Todos los derechos reservados.</p>
+                <span id="txt-footer-badge" class="quiet-badge">Quiet Luxury Collection</span>
             </div>
         </div>
     </footer>
 
-    <!-- Sidebar Bolsa de Compras Privada e Individual por Dispositivo -->
+    <!-- Sidebar Bolsa de Compras Privada -->
     <div id="cart-drawer" class="cart-drawer-overlay">
         <aside class="cart-drawer">
             <div class="cart-header">
@@ -127,7 +131,7 @@
         </aside>
     </div>
 
-    <!-- Modal Detalle Rápido de Producto con Líneas Elegantes Divisorias -->
+    <!-- Modal Detalle Rápido de Producto -->
     <div id="modal-detalle" class="modal-overlay">
         <div class="modal-mobile modal-detalle-content">
             <div class="modal-header">
@@ -227,13 +231,13 @@
         </div>
     </div>
 
-    <!-- Botón Flotante Admin (Panel Oculto) -->
+    <!-- Botón Flotante Admin -->
     <button id="btn-abrir-admin" class="btn-admin-flotante" aria-label="Gestión de Piezas">
         <span class="line"></span> Panel de Gestión
         <span id="badge-pedidos-count" class="badge-pedidos">0</span>
     </button>
 
-    <!-- Modal Admin Overlay (Buzón de Pedidos + Gestión de Productos) -->
+    <!-- Modal Admin Overlay (Buzón + Inventario + Editor de Textos) -->
     <div id="modal-admin" class="modal-overlay">
         <div class="modal-mobile modal-admin-custom">
             <div class="modal-header">
@@ -244,10 +248,13 @@
             <!-- Pestañas de navegación Admin -->
             <div class="admin-tabs">
                 <button id="tab-buzon-btn" class="admin-tab active">
-                    📩 Buzón de Solicitudes <span id="tab-badge-pedidos" class="tab-badge">0</span>
+                    📩 Buzón <span id="tab-badge-pedidos" class="tab-badge">0</span>
                 </button>
                 <button id="tab-inventario-btn" class="admin-tab">
-                    👜 Gestión de Inventario
+                    👜 Inventario
+                </button>
+                <button id="tab-textos-btn" class="admin-tab">
+                    ✏️ Editar Textos
                 </button>
             </div>
 
@@ -308,6 +315,95 @@
                     <h4>Inventario Actual</h4>
                     <ul id="lista-admin"></ul>
                 </div>
+            </div>
+
+            <!-- Pestaña 3: Editor de Textos y Nombres del Sitio -->
+            <div id="tab-textos-content" class="tab-content">
+                <div class="buzon-header">
+                    <h4>Edición Personalizada de Textos</h4>
+                    <p class="buzon-sub">Edita los títulos, subtítulos, descripciones y nombres de filtros de tu sitio web sin alterar el diseño.</p>
+                </div>
+                <form id="form-textos" class="form-luxury">
+                    <div class="editor-section-title">Entezado & Header</div>
+                    <div class="form-group">
+                        <label for="inp-headerSublogo">Sub-logo Encabezado</label>
+                        <input type="text" id="inp-headerSublogo" name="headerSublogo">
+                    </div>
+
+                    <div class="editor-section-title">Sección Principal (Hero)</div>
+                    <div class="form-group">
+                        <label for="inp-heroTag">Etiqueta Superior (Hero Tag)</label>
+                        <input type="text" id="inp-heroTag" name="heroTag">
+                    </div>
+                    <div class="form-group">
+                        <label for="inp-heroTitulo">Título Principal de la Página</label>
+                        <input type="text" id="inp-heroTitulo" name="heroTitulo">
+                    </div>
+                    <div class="form-group">
+                        <label for="inp-heroDesc">Descripción Principal (Hero Desc)</label>
+                        <textarea id="inp-heroDesc" name="heroDesc"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="inp-heroScrollText">Texto de Indicador Scroll</label>
+                        <input type="text" id="inp-heroScrollText" name="heroScrollText">
+                    </div>
+
+                    <div class="editor-section-title">Nombres de Filtros de Selección</div>
+                    <div class="form-group">
+                        <label for="inp-filterTodas">Nombre Filtro 1 (Todas)</label>
+                        <input type="text" id="inp-filterTodas" name="filterTodas">
+                    </div>
+                    <div class="form-group">
+                        <label for="inp-filter1">Nombre Filtro 2</label>
+                        <input type="text" id="inp-filter1" name="filter1">
+                    </div>
+                    <div class="form-group">
+                        <label for="inp-filter2">Nombre Filtro 3</label>
+                        <input type="text" id="inp-filter2" name="filter2">
+                    </div>
+                    <div class="form-group">
+                        <label for="inp-filter3">Nombre Filtro 4</label>
+                        <input type="text" id="inp-filter3" name="filter3">
+                    </div>
+
+                    <div class="editor-section-title">Encabezado de Catálogo</div>
+                    <div class="form-group">
+                        <label for="inp-sectionTag">Etiqueta Sección Catálogo</label>
+                        <input type="text" id="inp-sectionTag" name="sectionTag">
+                    </div>
+                    <div class="form-group">
+                        <label for="inp-sectionTitulo">Título Sección Catálogo</label>
+                        <input type="text" id="inp-sectionTitulo" name="sectionTitulo">
+                    </div>
+
+                    <div class="editor-section-title">Pie de Página (Footer)</div>
+                    <div class="form-group">
+                        <label for="inp-footerTagline">Tagline Footer (Ciudades)</label>
+                        <input type="text" id="inp-footerTagline" name="footerTagline">
+                    </div>
+                    <div class="form-group">
+                        <label for="inp-footerSub">Subtítulo Footer</label>
+                        <input type="text" id="inp-footerSub" name="footerSub">
+                    </div>
+                    <div class="form-group">
+                        <label for="inp-footerCol1Desc">Descripción Columna Atelier</label>
+                        <textarea id="inp-footerCol1Desc" name="footerCol1Desc"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="inp-footerCol3Desc">Descripción Columna Contacto</label>
+                        <textarea id="inp-footerCol3Desc" name="footerCol3Desc"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="inp-copyright">Texto de Copyright</label>
+                        <input type="text" id="inp-copyright" name="copyright">
+                    </div>
+                    <div class="form-group">
+                        <label for="inp-badgeText">Badge Final (Quiet Luxury)</label>
+                        <input type="text" id="inp-badgeText" name="badgeText">
+                    </div>
+
+                    <button type="submit" class="btn-guardar">Guardar Todos los Textos</button>
+                </form>
             </div>
 
         </div>

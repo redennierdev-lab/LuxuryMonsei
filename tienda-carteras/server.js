@@ -8,9 +8,8 @@ const FormData = require('form-data');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-const ADMIN_PIN = process.env.ADMIN_PIN || '1234';
+const ADMIN_PIN = process.env.ADMIN_PIN || '250219070306'; // Nuevo PIN de Administrador
 
-// Key de ImgBB para alojamiento gratuito de imágenes sin restricciones
 const IMGBB_API_KEY = process.env.IMGBB_API_KEY || '6d0571b4964723292f230314f308017c';
 
 // Middlewares
@@ -22,16 +21,18 @@ app.use(cors({
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Configuración de Multer para recibir imágenes en memoria/disco
+// Configuración de Multer
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 // Archivos de Base de Datos JSON
 const DB_PRODUCTOS = path.join(__dirname, 'productos.json');
 const DB_PEDIDOS = path.join(__dirname, 'pedidos.json');
+const DB_TEXTOS = path.join(__dirname, 'textos.json');
 
 let productos = [];
 let pedidos = [];
+let textosConfig = {};
 
 function cargarProductos() {
     if (fs.existsSync(DB_PRODUCTOS)) {
@@ -55,10 +56,22 @@ function cargarPedidos() {
     return pedidos;
 }
 
+function cargarTextos() {
+    if (fs.existsSync(DB_TEXTOS)) {
+        try {
+            textosConfig = JSON.parse(fs.readFileSync(DB_TEXTOS, 'utf-8'));
+        } catch (e) {
+            console.error("Error leyendo DB_TEXTOS:", e);
+        }
+    }
+    return textosConfig;
+}
+
 cargarProductos();
 cargarPedidos();
+cargarTextos();
 
-// Función auxiliar para subir foto a ImgBB de forma gratuita y global
+// Subir foto a ImgBB
 async function subirAImgBB(fileBuffer) {
     try {
         const formData = new FormData();
@@ -85,6 +98,18 @@ function verificarAdmin(req, res, next) {
     }
 }
 
+// --- RUTAS DE TEXTOS PERSONALIZABLES DE LA PÁGINA ---
+app.get('/api/textos', (req, res) => {
+    res.json(cargarTextos());
+});
+
+app.post('/api/textos', verificarAdmin, (req, res) => {
+    const nuevosTextos = req.body;
+    textosConfig = { ...cargarTextos(), ...nuevosTextos };
+    fs.writeFileSync(DB_TEXTOS, JSON.stringify(textosConfig, null, 2));
+    res.json({ success: true, message: "Textos de la página actualizados correctamente", textos: textosConfig });
+});
+
 // --- RUTAS DE PRODUCTOS ---
 app.get('/api/productos', (req, res) => {
     res.json(cargarProductos());
@@ -99,7 +124,6 @@ app.post('/api/productos', upload.array('imagenes', 5), verificarAdmin, async (r
             if (urlCloud) {
                 fotos.push(urlCloud);
             } else {
-                // Fallback a guardar en disco local si no hay internet
                 const filename = Date.now() + '-' + Math.round(Math.random() * 1E9) + '.jpg';
                 const localPath = path.join(__dirname, 'public', 'uploads', filename);
                 fs.writeFileSync(localPath, f.buffer);
@@ -133,7 +157,7 @@ app.delete('/api/productos/:id', verificarAdmin, (req, res) => {
     res.json({ message: "Pieza eliminada correctamente" });
 });
 
-// --- RUTAS DE BUZÓN DE PEDIDOS / SOLICITUDES ---
+// --- RUTAS DE BUZÓN DE PEDIDOS ---
 app.post('/api/pedidos', (req, res) => {
     const { nombre, email, telefono, direccion, items, total } = req.body;
 
@@ -190,5 +214,5 @@ app.post('/api/admin/login', (req, res) => {
 
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Backend API escuchando en el puerto ${PORT}`);
-    console.log(`Buzón de pedidos, catálogo e ImgBB Cloud Storage integrados.`);
+    console.log(`PIN Admin: ${ADMIN_PIN}`);
 });
