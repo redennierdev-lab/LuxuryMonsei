@@ -3,10 +3,15 @@ const multer = require('multer');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+const axios = require('axios');
+const FormData = require('form-data');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 const ADMIN_PIN = process.env.ADMIN_PIN || '1234';
+
+// Key de ImgBB para alojamiento gratuito de imágenes sin restricciones
+const IMGBB_API_KEY = process.env.IMGBB_API_KEY || '6d0571b4964723292f230314f308017c';
 
 // Middlewares
 app.use(cors({
@@ -17,30 +22,8 @@ app.use(cors({
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Configuración de Firebase Admin SDK (Si se proveen credenciales)
-let admin = null;
-let bucket = null;
-
-try {
-    admin = require('firebase-admin');
-    if (process.env.FIREBASE_CREDENTIALS_JSON && process.env.FIREBASE_STORAGE_BUCKET) {
-        const serviceAccount = JSON.parse(process.env.FIREBASE_CREDENTIALS_JSON);
-        admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount),
-            storageBucket: process.env.FIREBASE_STORAGE_BUCKET
-        });
-        bucket = admin.storage().bucket();
-        console.log("🔥 Firebase Storage inicializado con éxito.");
-    }
-} catch (e) {
-    console.log("ℹ️ Servidor iniciado sin credenciales de Firebase Storage. Se usará almacenamiento local.");
-}
-
-// Configuración de Multer para la carga de imágenes
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, path.join(__dirname, 'public', 'uploads')),
-    filename: (req, file, cb) => cb(null, Date.now() + '-' + Math.round(Math.random() * 1E9) + path.extname(file.originalname))
-});
+// Configuración de Multer para recibir imágenes en memoria/disco
+const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 // Archivos de Base de Datos JSON
@@ -75,6 +58,23 @@ function cargarPedidos() {
 cargarProductos();
 cargarPedidos();
 
+// Función auxiliar para subir foto a ImgBB de forma gratuita y global
+async function subirAImgBB(fileBuffer) {
+    try {
+        const formData = new FormData();
+        formData.append('image', fileBuffer.toString('base64'));
+        const response = await axios.post(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, formData, {
+            headers: formData.getHeaders()
+        });
+        if (response.data && response.data.data && response.data.data.url) {
+            return response.data.data.url;
+        }
+    } catch (err) {
+        console.error("Error subiendo foto a ImgBB:", err.message);
+    }
+    return null;
+}
+
 // Middleware para verificar PIN de Administrador
 function verificarAdmin(req, res, next) {
     const pinEnviado = req.headers['x-admin-pin'] || req.body.pin;
@@ -95,25 +95,17 @@ app.post('/api/productos', upload.array('imagenes', 5), verificarAdmin, async (r
     
     if (req.files && req.files.length > 0) {
         for (const f of req.files) {
-            if (bucket) {
-                try {
-                    const destination = `uploads/${f.filename}`;
-                    await bucket.upload(f.path, {
-                        destination: destination,
-                        public: true
-                    });
-                    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${destination}`;
-                    fotos.push(publicUrl);
-                } catch (err) {
-                    console.error("Error subiendo foto a Firebase, usando fallback local:", err);
-                    fotos.push(`/uploads/${f.filename}`);
-                }
+            const urlCloud = await subirAImgBB(f.buffer);
+            if (urlCloud) {
+                fotos.push(urlCloud);
             } else {
-                fotos.push(`/uploads/${f.filename}`);
+                // Fallback a guardar en disco local si no hay internet
+                const filename = Date.now() + '-' + Math.round(Math.random() * 1E9) + '.jpg';
+                const localPath = path.join(__dirname, 'public', 'uploads', filename);
+                fs.writeFileSync(localPath, f.buffer);
+                fotos.push(`/uploads/${filename}`);
             }
         }
-    } else if (req.file) {
-        fotos = [`/uploads/${req.file.filename}`];
     } else {
         fotos = ['/uploads/tote_taupe.jpg'];
     }
@@ -198,5 +190,5 @@ app.post('/api/admin/login', (req, res) => {
 
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Backend API escuchando en el puerto ${PORT}`);
-    console.log(`Buzón de pedidos, catálogo y Firebase Storage integrados.`);
+    console.log(`Buzón de pedidos, catálogo e ImgBB Cloud Storage integrados.`);
 });
