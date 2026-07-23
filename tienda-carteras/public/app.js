@@ -38,12 +38,13 @@ let filtroActual = 'todas';
 let busquedaActual = '';
 let bolsaCompras = JSON.parse(localStorage.getItem('maison_cart') || '[]');
 let adminPIN = sessionStorage.getItem('maison_admin_pin') || '';
-let editandoId = null; // ID del producto que se está editando
+let editandoId = null;
 
-// --- 1. Cargar Boutique & Textos Personalizados ---
+// --- 1. Cargar Boutique, Textos & Tasa BCV ---
 async function cargarTienda() {
     try {
         await cargarTextosSitio();
+        await obtenerTasaBCV();
         const res = await fetch(API_URL);
         todosProductos = await res.json();
         renderizarBarraCategorias();
@@ -53,6 +54,45 @@ async function cargarTienda() {
     } catch (err) {
         console.error("Error al conectar con el backend:", err);
     }
+}
+
+// Obtención de Tasa BCV en vivo u opcional manual
+async function obtenerTasaBCV() {
+    const bcvRateText = document.getElementById('bcv-rate-text');
+    if (!bcvRateText) return;
+
+    if (textosConfig && textosConfig.tasaBcvManual && textosConfig.tasaBcvManual.trim()) {
+        bcvRateText.innerText = `BCV: ${textosConfig.tasaBcvManual}`;
+        return;
+    }
+
+    try {
+        const res = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
+        if (res.ok) {
+            const data = await res.json();
+            if (data && data.promedio) {
+                bcvRateText.innerText = `BCV: Bs. ${data.promedio.toFixed(2)} / USD`;
+                return;
+            }
+        }
+    } catch (e) {
+        console.log("Intentando API secundaria BCV...");
+    }
+
+    try {
+        const res2 = await fetch('https://pydolarvenezuela-api.vercel.app/api/v1/dollar?page=bcv');
+        if (res2.ok) {
+            const data2 = await res2.json();
+            if (data2 && data2.moneda && data2.promedio) {
+                bcvRateText.innerText = `BCV: Bs. ${data2.promedio} / USD`;
+                return;
+            }
+        }
+    } catch (e2) {
+        console.error("Error obteniendo BCV API:", e2);
+    }
+
+    bcvRateText.innerText = `BCV: Oficial Día`;
 }
 
 async function cargarTextosSitio() {
@@ -94,13 +134,14 @@ function aplicarTextosEnDOM() {
     if (textosConfig.footerCol3Desc) document.getElementById('txt-footer-col3-desc').innerText = textosConfig.footerCol3Desc;
     if (textosConfig.copyright) document.getElementById('txt-footer-copyright').innerText = textosConfig.copyright;
     if (textosConfig.badgeText) document.getElementById('txt-footer-badge').innerText = textosConfig.badgeText;
+
+    obtenerTasaBCV();
 }
 
 // Generación Dinámica de Barra de Categorías / Filtros
 function renderizarBarraCategorias() {
     if (!categoriasNav) return;
     
-    // Obtener categorías únicas existentes en los productos
     const categoriasSet = new Set();
     todosProductos.forEach(p => {
         if (p.categoria && p.categoria.trim()) {
@@ -119,7 +160,6 @@ function renderizarBarraCategorias() {
 
     categoriasNav.innerHTML = html;
 
-    // Event listeners para los filtros dinámicos
     categoriasNav.querySelectorAll('.filter-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             categoriasNav.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
@@ -196,7 +236,6 @@ function renderizarCatalogo() {
 
         carruselHTML += `</div>`;
 
-        // NOTA: El precio ha sido omitido deliberadamente de la tarjeta principal para que el cliente lo descubra en el modal flotante
         div.innerHTML = carruselHTML + `
             <div class="producto-info">
                 <span class="categoria">${p.categoria}</span>
@@ -334,7 +373,7 @@ function actualizarBolsaUI() {
     cartItemsContainer.innerHTML = '';
     if (bolsaCompras.length === 0) {
         cartItemsContainer.innerHTML = '<p class="cart-empty">Tu bolsa de compras está vacía.</p>';
-        cartTotalEl.innerText = '$0 USD';
+        cartTotalEl.innerText = '$0.00 USD';
         btnCheckout.disabled = true;
         return;
     }
@@ -347,7 +386,7 @@ function actualizarBolsaUI() {
             <img src="${formatFotoUrl(item.imagen)}" alt="${item.nombre}">
             <div class="cart-item-info">
                 <h4>${item.nombre}</h4>
-                <p>${item.cantidad} x ${item.precio}</p>
+                <p>${item.cantidad} x ${formatFormatoPrecioUSD(item.precio)}</p>
             </div>
             <button class="cart-item-remove" onclick="removerDeBolsa(${item.id})">Remover</button>
         `;
@@ -355,10 +394,18 @@ function actualizarBolsaUI() {
     });
 
     const total = calcularTotal();
-    cartTotalEl.innerText = `$${total.toLocaleString()} USD`;
+    cartTotalEl.innerText = `$ ${total.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} USD`;
 }
 
-// --- 4. Modal Detalle Rápido ---
+function formatFormatoPrecioUSD(rawPrecio) {
+    if (!rawPrecio) return '$0.00 USD';
+    if (rawPrecio.toLowerCase().includes('usd')) return rawPrecio;
+    const num = parseFloat(rawPrecio.replace(/[^0-9.]/g, ''));
+    if (isNaN(num)) return `${rawPrecio} USD`;
+    return `$ ${num.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} USD`;
+}
+
+// --- 4. Modal Detalle Rápido (Precio debajo del botón en USD) ---
 const modalDetalle = document.getElementById('modal-detalle');
 const detalleGaleria = document.getElementById('detalle-galeria');
 const detalleNombre = document.getElementById('detalle-nombre');
@@ -380,7 +427,9 @@ window.abrirDetalle = (id) => {
     detalleDescripcion.innerText = p.descripcion;
     detalleMaterial.innerText = p.material;
     detalleDimensiones.innerText = p.dimensiones;
-    detallePrecio.innerText = p.precio;
+    
+    // Especificar claramente que el monto es en Dólares (USD)
+    detallePrecio.innerText = formatFormatoPrecioUSD(p.precio);
 
     const rawFotos = (p.imagenes && p.imagenes.length > 0) ? p.imagenes : [p.imagen];
     const fotos = rawFotos.map(formatFotoUrl);
@@ -421,12 +470,12 @@ btnCheckout.addEventListener('click', () => {
         p.style.display = 'flex';
         p.style.justifyContent = 'space-between';
         p.style.marginBottom = '6px';
-        p.innerHTML = `<span>${item.cantidad}x ${item.nombre}</span> <span>${item.precio}</span>`;
+        p.innerHTML = `<span>${item.cantidad}x ${item.nombre}</span> <span>${formatFormatoPrecioUSD(item.precio)}</span>`;
         checkoutResumenLista.appendChild(p);
     });
 
     const total = calcularTotal();
-    checkoutTotalVal.innerText = `$${total.toLocaleString()} USD`;
+    checkoutTotalVal.innerText = `$ ${total.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} USD`;
     modalCheckout.classList.add('activo');
 });
 
@@ -441,7 +490,7 @@ formCheckout.addEventListener('submit', async (e) => {
     const email = document.getElementById('cliente-email').value;
     const telefono = document.getElementById('cliente-telefono').value;
     const direccion = document.getElementById('cliente-direccion').value;
-    const total = `$${calcularTotal().toLocaleString()} USD`;
+    const total = `$ ${calcularTotal().toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} USD`;
 
     const payload = {
         nombre,
@@ -609,7 +658,7 @@ modalAdmin.addEventListener('click', (e) => {
 function poblarFormularioTextos() {
     if (!textosConfig) return;
     const fields = [
-        'brandName', 'headerSublogo', 'heroTag', 'heroTitulo', 'heroDesc', 'heroScrollText',
+        'brandName', 'tasaBcvManual', 'headerSublogo', 'heroTag', 'heroTitulo', 'heroDesc', 'heroScrollText',
         'sectionTag', 'sectionTitulo', 'footerTagline', 'footerSub',
         'footerCol1Desc', 'footerCol3Desc', 'copyright', 'badgeText'
     ];
@@ -628,7 +677,7 @@ formTextos.addEventListener('submit', async (e) => {
     }
 
     const fields = [
-        'brandName', 'headerSublogo', 'heroTag', 'heroTitulo', 'heroDesc', 'heroScrollText',
+        'brandName', 'tasaBcvManual', 'headerSublogo', 'heroTag', 'heroTitulo', 'heroDesc', 'heroScrollText',
         'sectionTag', 'sectionTitulo', 'footerTagline', 'footerSub',
         'footerCol1Desc', 'footerCol3Desc', 'copyright', 'badgeText'
     ];
@@ -686,19 +735,16 @@ window.prepararEdicionProducto = (id) => {
     document.getElementById('dimensiones').value = prod.dimensiones || '';
     document.getElementById('descripcion').value = prod.descripcion || '';
 
-    // Al editar, la carga de fotos nuevas es opcional
     inputImagenes.required = false;
 
     formProductoTitulo.innerText = `Editar Pieza: "${prod.nombre}"`;
     btnSubmitProducto.innerText = "Guardar Cambios de Pieza";
     btnCancelarEdicion.style.display = "inline-block";
 
-    // Cambiar a la pestaña de inventario si no está activa
     ocultarPestañas();
     tabInventarioBtn.classList.add('active');
     tabInventarioContent.classList.add('active');
 
-    // Scroll hacia el formulario
     formAdmin.scrollIntoView({ behavior: 'smooth' });
 };
 
@@ -750,7 +796,7 @@ async function cargarListaAdmin() {
             const li = document.createElement('li');
             li.innerHTML = `
                 <div>
-                    <strong>${p.nombre}</strong> <span style="font-size:11px; color:var(--accent-gold);">[${p.categoria}]</span> - ${p.precio}
+                    <strong>${p.nombre}</strong> <span style="font-size:11px; color:var(--accent-gold);">[${p.categoria}]</span> - ${formatFormatoPrecioUSD(p.precio)}
                 </div>
                 <div class="actions-admin-item">
                     <button class="btn-editar-admin" onclick="prepararEdicionProducto(${p.id})">✏️ Editar</button>
@@ -841,7 +887,7 @@ function renderizarBuzonPedidos() {
                 itemsHTML += `
                     <div class="pedido-item-row">
                         <span>${it.cantidad}x ${it.nombre}</span>
-                        <span>${it.precio}</span>
+                        <span>${formatFormatoPrecioUSD(it.precio)}</span>
                     </div>
                 `;
             });

@@ -20,6 +20,12 @@
                 <a href="#" id="brand-logo-text" class="logo">Maison Élégance</a>
                 <span id="txt-header-sublogo" class="sub-logo">Paris • New York • Tokyo</span>
             </div>
+
+            <!-- Insignia de Tasa BCV en la esquina del encabezado -->
+            <div class="bcv-top-badge" id="bcv-badge" title="Tasa Oficial del Banco Central de Venezuela">
+                <span class="bcv-dot"></span>
+                <span id="bcv-rate-text" class="bcv-text">BCV: Cargando...</span>
+            </div>
             
             <div class="header-actions">
                 <button id="btn-admin-header" class="icon-btn-admin" title="Acceso Administrador" aria-label="Acceso Admin">
@@ -121,14 +127,14 @@
             <div class="cart-footer">
                 <div class="cart-subtotal">
                     <span>Subtotal Estimado</span>
-                    <span id="cart-total">$0 USD</span>
+                    <span id="cart-total">$0.00 USD</span>
                 </div>
                 <button id="btn-checkout" class="btn-checkout" disabled>Solicitar Adquisición</button>
             </div>
         </aside>
     </div>
 
-    <!-- Modal Detalle Rápido de Producto -->
+    <!-- Modal Detalle Rápido de Producto (Precio debajo del Botón en USD) -->
     <div id="modal-detalle" class="modal-overlay">
         <div class="modal-mobile modal-detalle-content">
             <div class="modal-header">
@@ -174,9 +180,14 @@
 
                     <div class="luxury-divider"></div>
 
-                    <div class="precio-action-block">
-                        <span id="detalle-precio" class="precio">$0 USD</span>
-                        <button id="btn-add-cart-detalle" class="btn-comprar">Añadir a la Bolsa</button>
+                    <!-- Bloque de Acción: Primero el botón Añadir a la Bolsa, Luego el precio debajo especificando en USD -->
+                    <div class="precio-action-block-vertical">
+                        <button id="btn-add-cart-detalle" class="btn-comprar btn-comprar-full">Añadir a la Bolsa</button>
+                        <div class="precio-usd-container">
+                            <span class="precio-usd-tag">Precio de Adquisición:</span>
+                            <span id="detalle-precio" class="precio-usd-val">$ 1,450.00 USD</span>
+                            <span class="precio-usd-note">(Monto expresado en Dólares Estadounidenses / USD)</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -219,7 +230,7 @@
                     <div id="checkout-resumen-lista"></div>
                     <div class="checkout-total-line">
                         <span>Total Final:</span>
-                        <strong id="checkout-total-val">$0 USD</strong>
+                        <strong id="checkout-total-val">$0.00 USD</strong>
                     </div>
                 </div>
 
@@ -286,8 +297,8 @@
                             <small>Al escribir una categoría nueva (ej. "Verano"), se creará automáticamente su botón de filtro para tus clientes.</small>
                         </div>
                         <div class="form-group">
-                            <label for="precio">Precio</label>
-                            <input type="text" id="precio" name="precio" placeholder="ej. $1,450 USD" required>
+                            <label for="precio">Precio (ej. $1,450.00 USD)</label>
+                            <input type="text" id="precio" name="precio" placeholder="ej. $1,450.00 USD" required>
                         </div>
                     </div>
 
@@ -310,7 +321,7 @@
                     <div class="form-group">
                         <label for="imagenes" id="label-imagenes">Fotografías de la Pieza (Galería de Fotos / Archivos)</label>
                         <input type="file" id="imagenes" name="imagenes" accept="image/*" multiple class="input-file-luxury">
-                        <small id="help-imagenes">Abre la galería de fotos y almacenamiento de tu dispositivo para seleccionar una o varias imágenes. (Si estás editando, solo selecciona fotos si deseas cambiarlas).</small>
+                        <small id="help-imagenes">Abre la galería de fotos y almacenamiento de tu dispositivo para seleccionar una o varias imágenes.</small>
                     </div>
 
                     <button type="submit" id="btn-submit-producto" class="btn-guardar">Publicar Pieza</button>
@@ -326,13 +337,17 @@
             <div id="tab-textos-content" class="tab-content">
                 <div class="buzon-header">
                     <h4>Edición Personalizada de Marca y Textos</h4>
-                    <p class="buzon-sub">Modifica el nombre de tu marca, títulos, subtítulos y descripciones de tu sitio web.</p>
+                    <p class="buzon-sub">Modifica el nombre de tu marca, tasa BCV manual, títulos y descripciones del sitio web.</p>
                 </div>
                 <form id="form-textos" class="form-luxury">
-                    <div class="editor-section-title">Marca &amp; Identidad Principal</div>
+                    <div class="editor-section-title">Marca &amp; Tasa de Cambio</div>
                     <div class="form-group">
                         <label for="inp-brandName">Nombre de la Marca (Logo Encabezado y Footer)</label>
                         <input type="text" id="inp-brandName" name="brandName" placeholder="ej. Maison Élégance">
+                    </div>
+                    <div class="form-group">
+                        <label for="inp-tasaBcvManual">Tasa BCV Personalizada (Opcional - Dejar en blanco para autodetectar BCV del día)</label>
+                        <input type="text" id="inp-tasaBcvManual" name="tasaBcvManual" placeholder="ej. Bs. 128.45 / USD">
                     </div>
                     <div class="form-group">
                         <label for="inp-headerSublogo">Sub-logo Encabezado</label>
