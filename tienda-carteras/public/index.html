@@ -3,47 +3,189 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maison Élégance | Haute Maroquinerie</title>
+    <title>Maison Élégance | Boutique de Haute Maroquinerie</title>
+    <meta name="description" content="Portal e-commerce de exhibición y adquisición de carteras de autor con estética Quiet Luxury.">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
     <!-- Header Navigation -->
-    <header class="header">
-        <div class="logo">Maison Élégance</div>
-        <span class="sub-logo">Paris • New York</span>
+    <header class="header" id="main-header">
+        <div class="header-container">
+            <div class="brand-box">
+                <a href="#" class="logo">Maison Élégance</a>
+                <span class="sub-logo">Paris • New York • Tokyo</span>
+            </div>
+            
+            <div class="header-actions">
+                <button id="btn-buscar-toggle" class="icon-btn" aria-label="Buscar">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                </button>
+                <button id="btn-abrir-bolsa" class="cart-btn" aria-label="Bolsa de Compras">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+                    <span id="cart-count" class="cart-count">0</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Barra de Búsqueda Desplegable -->
+        <div id="search-bar" class="search-bar-container">
+            <input type="text" id="input-busqueda" placeholder="Buscar por nombre, material o categoría (ej. Becerro, Noche)...">
+            <button id="btn-cerrar-busqueda">&times;</button>
+        </div>
     </header>
 
     <!-- Hero Section -->
     <section class="hero">
-        <span class="hero-tag">Colección Exclusiva</span>
+        <span class="hero-tag">Haute Maroquinerie 2026</span>
         <h1>Elegancia Silenciosa</h1>
-        <p class="hero-desc">Carteras de autor hechas a mano. Lujo discreto, materiales nobles y proporciones perfeccionadas.</p>
+        <p class="hero-desc">Piezas de autor confeccionadas artesanalmente. Lujo discreto, pieles nobles y siluetas perfeccionadas para perdurar en el tiempo.</p>
         <div class="scroll-indicator">
-            <span>Descubrir Piezas</span>
+            <span>Explorar Colección</span>
             <div class="scroll-line"></div>
         </div>
     </section>
 
+    <!-- Filtros de Categoría -->
+    <nav class="categorias-nav">
+        <button class="filter-btn active" data-filter="todas">Todas las Piezas</button>
+        <button class="filter-btn" data-filter="Edición Limitada">Edición Limitada</button>
+        <button class="filter-btn" data-filter="Colección Noche">Colección Noche</button>
+        <button class="filter-btn" data-filter="Esenciales de Día">Esenciales de Día</button>
+    </nav>
+
     <!-- Catalogo Section -->
     <main class="catalogo-wrapper">
         <div class="section-title">
-            <span>Boutique</span>
-            <h2>Catálogo de Piezas</h2>
+            <span>Boutique Exclusiva</span>
+            <h2 id="catalogo-titulo">Catálogo General</h2>
         </div>
         <div id="catalogo-container" class="catalogo-container"></div>
     </main>
 
     <!-- Footer -->
     <footer class="footer">
-        <p class="footer-logo">Maison Élégance</p>
-        <p>&copy; 2026 Maison Élégance. Todos los derechos reservados.</p>
-        <p class="tagline">Lujo Silencioso & Haute Maroquinerie</p>
+        <div class="footer-content">
+            <p class="footer-logo">Maison Élégance</p>
+            <p class="footer-sub">Atelier de Maroquinerie • Atemporalidad & Perfección</p>
+            <div class="footer-links">
+                <a href="#hero">Inicio</a>
+                <a href="#catalogo-container">Catálogo</a>
+                <a href="#" onclick="alert('Atención al cliente Maison Élégance: concierge@maisonelegance.com')">Concierge</a>
+            </div>
+            <p class="copyright">&copy; 2026 Maison Élégance. Todos los derechos reservados.</p>
+        </div>
     </footer>
+
+    <!-- Sidebar Bolsa de Compras (Cart Drawer) -->
+    <div id="cart-drawer" class="cart-drawer-overlay">
+        <aside class="cart-drawer">
+            <div class="cart-header">
+                <h3>Bolsa de Adquisición</h3>
+                <button id="btn-cerrar-bolsa" class="close-btn">&times;</button>
+            </div>
+            <div id="cart-items" class="cart-items-container">
+                <p class="cart-empty">Tu bolsa de compras está vacía.</p>
+            </div>
+            <div class="cart-footer">
+                <div class="cart-subtotal">
+                    <span>Subtotal Estimado</span>
+                    <span id="cart-total">$0 USD</span>
+                </div>
+                <button id="btn-checkout" class="btn-checkout" disabled>Solicitar Adquisición</button>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Modal Detalle Rápido de Producto (Quick View) -->
+    <div id="modal-detalle" class="modal-overlay">
+        <div class="modal-mobile modal-detalle-content">
+            <div class="modal-header">
+                <h3 id="detalle-nombre">Detalle de la Pieza</h3>
+                <button id="btn-cerrar-detalle">&times;</button>
+            </div>
+            <div class="detalle-body">
+                <div id="detalle-galeria" class="detalle-galeria"></div>
+                <div class="detalle-info">
+                    <span id="detalle-categoria" class="categoria"></span>
+                    <h2 id="detalle-titulo"></h2>
+                    <p id="detalle-descripcion" class="descripcion"></p>
+                    
+                    <div class="detalles-tecnicos">
+                        <div class="spec-row">
+                            <span>Material Noble</span>
+                            <span id="detalle-material"></span>
+                        </div>
+                        <div class="spec-row">
+                            <span>Dimensiones</span>
+                            <span id="detalle-dimensiones"></span>
+                        </div>
+                        <div class="spec-row">
+                            <span>Disponibilidad</span>
+                            <span class="badge-stock">Pieza Única de Atelier</span>
+                        </div>
+                    </div>
+
+                    <div class="cuidados-box">
+                        <h4>Cuidados de la Piel</h4>
+                        <p>Guardar en su funda antipolvo original. Evitar la exposición prolongada a la luz directa y la humedad.</p>
+                    </div>
+
+                    <span id="detalle-precio" class="precio"></span>
+                    <button id="btn-add-cart-detalle" class="btn-comprar">Añadir a la Bolsa</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Formulario de Checkout / Adquisición -->
+    <div id="modal-checkout" class="modal-overlay">
+        <div class="modal-mobile">
+            <div class="modal-header">
+                <h3>Solicitud de Adquisición</h3>
+                <button id="btn-cerrar-checkout">&times;</button>
+            </div>
+            <form id="form-checkout" class="form-luxury">
+                <p class="checkout-intro">Ingresa tus datos de Concierge para coordinar la entrega privada de tus piezas seleccionadas.</p>
+
+                <div class="form-group">
+                    <label for="cliente-nombre">Nombre Completo</label>
+                    <input type="text" id="cliente-nombre" required placeholder="ej. Victoria de la Serna">
+                </div>
+
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label for="cliente-email">Correo Electrónico</label>
+                        <input type="email" id="cliente-email" required placeholder="victoria@ejemplo.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="cliente-telefono">Teléfono / WhatsApp</label>
+                        <input type="tel" id="cliente-telefono" required placeholder="+52 55 1234 5678">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="cliente-direccion">Dirección de Entrega</label>
+                    <textarea id="cliente-direccion" required placeholder="Calle, Número, Ciudad y Código Postal..."></textarea>
+                </div>
+
+                <div class="checkout-resumen">
+                    <h4>Resumen de Pedido</h4>
+                    <div id="checkout-resumen-lista"></div>
+                    <div class="checkout-total-line">
+                        <span>Total Final:</span>
+                        <strong id="checkout-total-val">$0 USD</strong>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-guardar">Confirmar Reserva de Piezas</button>
+            </form>
+        </div>
+    </div>
 
     <!-- Botón Flotante Admin (Panel Oculto) -->
     <button id="btn-abrir-admin" class="btn-admin-flotante" aria-label="Gestión de Piezas">
@@ -107,6 +249,11 @@
                 <ul id="lista-admin"></ul>
             </div>
         </div>
+    </div>
+
+    <!-- Notificación Toast -->
+    <div id="toast-notification" class="toast">
+        <span id="toast-message">Pieza añadida a la bolsa de compras</span>
     </div>
 
     <script src="app.js"></script>
