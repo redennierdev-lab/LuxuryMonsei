@@ -3,6 +3,7 @@ const multer = require('multer');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+const https = require('https');
 const axios = require('axios');
 const FormData = require('form-data');
 
@@ -71,6 +72,52 @@ cargarProductos();
 cargarPedidos();
 cargarTextos();
 
+// Función de Scraper Directo a bcv.org.ve para obtener la Tasa del Día
+async function obtenerTasaBCVOficial() {
+    try {
+        const httpsAgent = new https.Agent({ rejectUnauthorized: false });
+        const response = await axios.get('https://www.bcv.org.ve/', {
+            httpsAgent,
+            timeout: 8000,
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            }
+        });
+
+        const html = response.data;
+        // Expresión regular para ubicar <div id="dolar">...<strong> VALOR </strong>
+        const match = html.match(/id=["']dolar["'][\s\S]*?<strong>\s*([\d.,]+)\s*<\/strong>/i);
+        if (match && match[1]) {
+            const tasaStr = match[1].trim().replace(/\s+/g, '');
+            return `Bs. ${tasaStr} / USD`;
+        }
+    } catch (err) {
+        console.error("Error al obtener tasa directa de BCV.org.ve:", err.message);
+    }
+
+    // Respaldo 1: ve.dolarapi.com
+    try {
+        const res1 = await axios.get('https://ve.dolarapi.com/v1/dolares/oficial', { timeout: 5000 });
+        if (res1.data && res1.data.promedio) {
+            return `Bs. ${res1.data.promedio.toFixed(2).replace('.', ',')} / USD`;
+        }
+    } catch (e) {
+        console.error("Fallback 1 DolarAPI falló:", e.message);
+    }
+
+    // Respaldo 2: pydolarvenezuela
+    try {
+        const res2 = await axios.get('https://pydolarvenezuela-api.vercel.app/api/v1/dollar?page=bcv', { timeout: 5000 });
+        if (res2.data && res2.data.promedio) {
+            return `Bs. ${res2.data.promedio} / USD`;
+        }
+    } catch (e) {
+        console.error("Fallback 2 PyDolar falló:", e.message);
+    }
+
+    return null;
+}
+
 // Subir foto a ImgBB
 async function subirAImgBB(fileBuffer) {
     try {
@@ -97,6 +144,20 @@ function verificarAdmin(req, res, next) {
         return res.status(401).json({ error: "No autorizado. PIN de administrador incorrecto." });
     }
 }
+
+// --- RUTA DE TASA BCV DEL DÍA ---
+app.get('/api/bcv', async (req, res) => {
+    if (textosConfig && textosConfig.tasaBcvManual && textosConfig.tasaBcvManual.trim()) {
+        return res.json({ tasa: `Bs. ${textosConfig.tasaBcvManual}`, fuente: 'Manual' });
+    }
+
+    const tasaOficial = await obtenerTasaBCVOficial();
+    if (tasaOficial) {
+        return res.json({ tasa: tasaOficial, fuente: 'Oficial BCV' });
+    } else {
+        return res.json({ tasa: 'Bs. Oficial BCV', fuente: 'Defecto' });
+    }
+});
 
 // --- RUTAS DE TEXTOS PERSONALIZABLES DE LA PÁGINA ---
 app.get('/api/textos', (req, res) => {
@@ -256,5 +317,5 @@ app.post('/api/admin/login', (req, res) => {
 
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Backend API escuchando en el puerto ${PORT}`);
-    console.log(`PIN Admin: ${ADMIN_PIN}`);
+    console.log(`Scraper BCV listo. PIN Admin: ${ADMIN_PIN}`);
 });

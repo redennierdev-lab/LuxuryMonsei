@@ -17,6 +17,10 @@ const LOGIN_API_URL = (window.location.port && window.location.port !== `${BACKE
     ? `http://${window.location.hostname || 'localhost'}:${BACKEND_PORT}/api/admin/login`
     : '/api/admin/login';
 
+const BCV_API_URL = (window.location.port && window.location.port !== `${BACKEND_PORT}`)
+    ? `http://${window.location.hostname || 'localhost'}:${BACKEND_PORT}/api/bcv`
+    : '/api/bcv';
+
 function formatFotoUrl(url) {
     if (!url) return '/uploads/tote_taupe.jpg';
     if (url.startsWith('http')) return url;
@@ -56,7 +60,7 @@ async function cargarTienda() {
     }
 }
 
-// Obtención de Tasa BCV en vivo u opcional manual
+// Obtención de Tasa BCV scraping directo de bcv.org.ve vía Backend
 async function obtenerTasaBCV() {
     const bcvRateText = document.getElementById('bcv-rate-text');
     if (!bcvRateText) return;
@@ -67,29 +71,16 @@ async function obtenerTasaBCV() {
     }
 
     try {
-        const res = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
+        const res = await fetch(BCV_API_URL);
         if (res.ok) {
             const data = await res.json();
-            if (data && data.promedio) {
-                bcvRateText.innerText = `BCV: Bs. ${data.promedio.toFixed(2)} / USD`;
+            if (data && data.tasa) {
+                bcvRateText.innerText = `BCV: ${data.tasa}`;
                 return;
             }
         }
     } catch (e) {
-        console.log("Intentando API secundaria BCV...");
-    }
-
-    try {
-        const res2 = await fetch('https://pydolarvenezuela-api.vercel.app/api/v1/dollar?page=bcv');
-        if (res2.ok) {
-            const data2 = await res2.json();
-            if (data2 && data2.moneda && data2.promedio) {
-                bcvRateText.innerText = `BCV: Bs. ${data2.promedio} / USD`;
-                return;
-            }
-        }
-    } catch (e2) {
-        console.error("Error obteniendo BCV API:", e2);
+        console.error("Error al consultar /api/bcv:", e);
     }
 
     bcvRateText.innerText = `BCV: Oficial Día`;
@@ -405,7 +396,7 @@ function formatFormatoPrecioUSD(rawPrecio) {
     return `$ ${num.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} USD`;
 }
 
-// --- 4. Modal Detalle Rápido (Precio debajo del botón en USD) ---
+// --- 4. Modal Detalle Rápido ---
 const modalDetalle = document.getElementById('modal-detalle');
 const detalleGaleria = document.getElementById('detalle-galeria');
 const detalleNombre = document.getElementById('detalle-nombre');
@@ -427,8 +418,6 @@ window.abrirDetalle = (id) => {
     detalleDescripcion.innerText = p.descripcion;
     detalleMaterial.innerText = p.material;
     detalleDimensiones.innerText = p.dimensiones;
-    
-    // Especificar claramente que el monto es en Dólares (USD)
     detallePrecio.innerText = formatFormatoPrecioUSD(p.precio);
 
     const rawFotos = (p.imagenes && p.imagenes.length > 0) ? p.imagenes : [p.imagen];
